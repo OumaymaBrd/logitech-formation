@@ -1,26 +1,35 @@
 @import "tailwindcss";
 
 :root {
+  /* Palette extraite du logo officiel Logitech Formation */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #300878;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /* Violet marque (image logo) */
+  --color-brand-950: #300878;
+  --color-brand-800: #401890;
+  --color-brand-700: #5020a8;
+  --color-brand-500: #7f57c5;
+  --color-brand-100: #eee8fa;
+  --color-brand-50: #f7f4fc;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --shadow-card: 0 4px 24px rgba(48, 8, 120, 0.08);
+  --shadow-soft: 0 2px 12px rgba(48, 8, 120, 0.06);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
