@@ -38,6 +38,15 @@ export default function AffectationPage() {
   const [loadingAssign, setLoadingAssign] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (!modalOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [modalOpen]);
+
   const courseById = useMemo(() => {
     const m = new Map<string, Course>();
     for (const c of courses) m.set(c.id, c);
@@ -228,8 +237,8 @@ export default function AffectationPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
           <h1 className="text-xl font-extrabold text-brand-950 sm:text-2xl">
             {t.admin.assignment}
           </h1>
@@ -240,7 +249,7 @@ export default function AffectationPage() {
         <Button
           type="button"
           variant="primary"
-          className="gap-2"
+          className="w-full gap-2 sm:w-auto"
           onClick={openCreate}
         >
           <Plus className="h-4 w-4" />
@@ -330,7 +339,7 @@ export default function AffectationPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-right">
+                    <td className="px-4 py-3.5 text-end">
                       <Button
                         type="button"
                         variant="ghost"
@@ -338,7 +347,7 @@ export default function AffectationPage() {
                         onClick={() => openEdit(u)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                        Modifier
+                        <span className="hidden sm:inline">Modifier</span>
                       </Button>
                     </td>
                   </tr>
@@ -351,18 +360,18 @@ export default function AffectationPage() {
 
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-brand-950/50 p-4 sm:items-center"
+          className="fixed inset-0 z-[80] flex items-stretch justify-center bg-brand-950/55 p-0 sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           onClick={() => setModalOpen(false)}
         >
           <div
-            className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+            className="flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden rounded-none bg-white shadow-xl sm:h-auto sm:max-h-[min(92dvh,720px)] sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-3 border-b border-brand-100 px-5 py-4">
-              <div>
-                <h2 className="text-lg font-extrabold text-brand-950">
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-brand-100 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 sm:pt-4">
+              <div className="min-w-0">
+                <h2 className="text-base font-extrabold text-brand-950 sm:text-lg">
                   {selectedUserId
                     ? "Modifier l'affectation"
                     : "Nouvelle affectation"}
@@ -374,14 +383,14 @@ export default function AffectationPage() {
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="rounded-xl p-2 text-brand-950/45 hover:bg-brand-50"
+                className="shrink-0 rounded-xl p-2 text-brand-950/45 hover:bg-brand-50"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 [-webkit-overflow-scrolling:touch]">
               {error && (
                 <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
                   {error}
@@ -394,7 +403,7 @@ export default function AffectationPage() {
                   Client *
                 </label>
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/40" />
+                  <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/40" />
                   <input
                     type="search"
                     value={clientQuery}
@@ -403,16 +412,16 @@ export default function AffectationPage() {
                       if (selectedUserId) setSelectedUserId("");
                     }}
                     placeholder="Rechercher : prénom, nom, email ou téléphone…"
-                    className="w-full rounded-xl border border-brand-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full rounded-xl border border-brand-100 py-2.5 ps-10 pe-3 text-sm outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 {selectedClient ? (
-                  <div className="mt-2 flex items-center justify-between rounded-xl border border-brand-700 bg-brand-50 px-3 py-2.5">
+                  <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-brand-700 bg-brand-50 px-3 py-2.5">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-brand-950">
+                      <p className="break-words text-sm font-semibold text-brand-950">
                         {clientLabel(selectedClient)}
                       </p>
-                      <p className="truncate text-xs text-brand-950/50">
+                      <p className="break-all text-xs text-brand-950/50">
                         {selectedClient.email}
                         {selectedClient.phone
                           ? ` · ${selectedClient.phone}`
@@ -426,13 +435,13 @@ export default function AffectationPage() {
                         setClientQuery("");
                         setSelectedCourseIds([]);
                       }}
-                      className="ml-2 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-brand-700 hover:bg-white"
+                      className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-brand-700 hover:bg-white"
                     >
                       Changer
                     </button>
                   </div>
                 ) : clientQuery.trim() ? (
-                  <ul className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-brand-100">
+                  <ul className="mt-2 max-h-36 overflow-y-auto overscroll-contain rounded-xl border border-brand-100 sm:max-h-40">
                     {modalClientResults.length === 0 ? (
                       <li className="px-3 py-3 text-xs text-brand-950/45">
                         Aucun client trouvé pour « {clientQuery.trim()} ».
@@ -443,7 +452,7 @@ export default function AffectationPage() {
                           <button
                             type="button"
                             onClick={() => pickClient(u)}
-                            className="w-full px-3 py-2.5 text-left text-sm hover:bg-brand-50"
+                            className="w-full px-3 py-2.5 text-start text-sm hover:bg-brand-50"
                           >
                             <span className="block font-semibold text-brand-950">
                               {clientLabel(u)}
@@ -471,7 +480,7 @@ export default function AffectationPage() {
                     Formations
                   </label>
                   {selectedUserId && courses.length > 0 && (
-                    <div className="flex gap-3 text-xs font-semibold text-brand-700">
+                    <div className="flex flex-wrap gap-3 text-xs font-semibold text-brand-700">
                       <button
                         type="button"
                         onClick={() =>
@@ -492,14 +501,14 @@ export default function AffectationPage() {
                   )}
                 </div>
                 <div className="relative mb-2">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/40" />
+                  <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/40" />
                   <input
                     type="search"
                     value={courseQuery}
                     onChange={(e) => setCourseQuery(e.target.value)}
                     placeholder="Rechercher une formation…"
                     disabled={!selectedUserId}
-                    className="w-full rounded-xl border border-brand-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-brand-50 disabled:opacity-60"
+                    className="w-full rounded-xl border border-brand-100 py-2.5 ps-10 pe-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-brand-50 disabled:opacity-60"
                   />
                 </div>
 
@@ -516,7 +525,7 @@ export default function AffectationPage() {
                     Aucune formation trouvée.
                   </p>
                 ) : (
-                  <ul className="max-h-56 space-y-1.5 overflow-y-auto">
+                  <ul className="space-y-1.5 pb-2">
                     {modalCourseResults.map((c) => {
                       const checked = selectedCourseIds.includes(c.id);
                       return (
@@ -535,7 +544,7 @@ export default function AffectationPage() {
                               onChange={() => toggleCourse(c.id)}
                             />
                             <span className="min-w-0 flex-1">
-                              <span className="block text-sm font-semibold text-brand-950">
+                              <span className="block break-words text-sm font-semibold text-brand-950">
                                 {c.title}
                               </span>
                               <span className="mt-0.5 block text-xs text-brand-950/45">
@@ -552,14 +561,15 @@ export default function AffectationPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-100 px-5 py-4">
-              <p className="text-xs text-brand-950/50">
+            <div className="flex shrink-0 flex-col gap-3 border-t border-brand-100 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+              <p className="text-center text-xs text-brand-950/50 sm:text-start">
                 {selectedCourseIds.length} formation(s) sélectionnée(s)
               </p>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
                 <Button
                   type="button"
                   variant="ghost"
+                  className="w-full"
                   onClick={() => setModalOpen(false)}
                 >
                   Annuler
@@ -567,7 +577,7 @@ export default function AffectationPage() {
                 <Button
                   type="button"
                   variant="primary"
-                  className="gap-2"
+                  className="w-full gap-2"
                   disabled={saving || !selectedUserId}
                   onClick={onSave}
                 >
