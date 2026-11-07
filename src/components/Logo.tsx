@@ -20,7 +20,7 @@ const sizeMap: Record<
   header: {
     width: 220,
     height: 54,
-    className: "h-10 w-auto max-h-10 sm:h-11 sm:max-h-11",
+    className: "h-8 w-auto max-h-8 max-w-[min(100%,9.5rem)] sm:h-10 sm:max-h-10 sm:max-w-none md:h-11 md:max-h-11",
     src: "/logo-mark.png",
   },
   footer: {
@@ -42,19 +42,19 @@ export function BrandBadge({ className = "" }: { className?: string }) {
   const { t } = useI18n();
   return (
     <div
-      className={`inline-flex max-w-full items-center gap-3 rounded-full border border-white/25 bg-white/12 px-4 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md sm:gap-3.5 sm:px-5 sm:py-3 ${className}`}
+      className={`inline-flex max-w-full items-center gap-2 rounded-full border border-white/25 bg-white/12 px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md sm:gap-3.5 sm:px-5 sm:py-3 ${className}`}
       role="img"
       aria-label={`${t.home.brandBadgeTitle} — ${t.home.brandBadgeSubtitle}`}
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500/90 text-white sm:h-10 sm:w-10">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500/90 text-white sm:h-10 sm:w-10">
         <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.25} />
       </span>
-      <span className="h-8 w-px shrink-0 bg-white/30 sm:h-9" aria-hidden />
+      <span className="h-7 w-px shrink-0 bg-white/30 sm:h-9" aria-hidden />
       <span className="min-w-0 pe-1">
-        <span className="block text-sm font-bold leading-tight tracking-tight text-white sm:text-[15px]">
+        <span className="block text-xs font-bold leading-tight tracking-tight text-white sm:text-[15px]">
           {t.home.brandBadgeTitle}
         </span>
-        <span className="mt-0.5 block text-[11px] leading-snug text-white/75 sm:text-xs">
+        <span className="mt-0.5 block text-[10px] leading-snug text-white/75 sm:text-xs">
           {t.home.brandBadgeSubtitle}
         </span>
       </span>
@@ -108,7 +108,9 @@ export function Logo({
   return (
     <Link
       href={href}
-      className="inline-flex h-full shrink-0 items-center leading-none"
+      className={`inline-flex h-full items-center leading-none ${
+        variant === "header" ? "min-w-0 max-w-full" : "shrink-0"
+      }`}
       aria-label="Logitech Formation — Accueil"
     >
       {img}

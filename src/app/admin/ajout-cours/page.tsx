@@ -53,7 +53,7 @@ function FileDropZone({
         )}
       </div>
 
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-brand-200 bg-white px-4 py-6 text-center transition hover:border-brand-500 hover:bg-brand-50/60">
+      <label className="relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-brand-200 bg-white px-4 py-6 text-center transition hover:border-brand-500 hover:bg-brand-50/60">
         <Upload className="h-5 w-5 text-brand-700" />
         <span className="text-sm font-semibold text-brand-700">
           {file ? "Changer le fichier" : "Choisir un fichier"}
@@ -65,7 +65,7 @@ function FileDropZone({
           type="file"
           accept={accept}
           required={required}
-          className="sr-only"
+          className="absolute inset-0 cursor-pointer opacity-0"
           onChange={(e) => onChange(e.target.files?.[0] ?? null)}
         />
       </label>
@@ -78,7 +78,11 @@ function FileDropZone({
             : `${Math.round(file.size / 1024)} Ko`}
         </p>
       )}
-      {preview}
+      {preview ? (
+        <div className="mt-3 max-h-40 overflow-hidden rounded-xl border border-brand-100 bg-white">
+          {preview}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -216,7 +220,7 @@ export default function AjoutCoursPage() {
   return (
     <div className="mx-auto w-full max-w-4xl pb-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-extrabold tracking-tight text-brand-950">
+        <h1 className="text-xl font-extrabold tracking-tight text-brand-950 sm:text-2xl">
           {t.admin.addCourse}
         </h1>
         <p className="mt-1 text-sm text-brand-950/55">
@@ -226,7 +230,7 @@ export default function AjoutCoursPage() {
 
       <form
         onSubmit={onSubmit}
-        className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-soft"
+        className="rounded-2xl border border-brand-100 bg-white shadow-soft"
       >
         <div className="space-y-6 p-5 sm:p-7">
           <section className="space-y-4">
@@ -436,11 +440,7 @@ export default function AjoutCoursPage() {
                   </label>
                 </div>
 
-                <div
-                  className={`grid gap-4 ${
-                    wantPhoto && wantVideo ? "sm:grid-cols-2" : "grid-cols-1"
-                  }`}
-                >
+                <div className="grid grid-cols-1 gap-4">
                   {wantPhoto && (
                     <FileDropZone
                       accept="image/*"
@@ -458,7 +458,7 @@ export default function AjoutCoursPage() {
                           <img
                             src={photoPreview}
                             alt=""
-                            className="mt-3 max-h-40 w-full rounded-xl object-cover"
+                            className="h-40 w-full object-contain"
                           />
                         ) : null
                       }
@@ -480,7 +480,8 @@ export default function AjoutCoursPage() {
                           <video
                             src={videoPreview}
                             controls
-                            className="mt-3 max-h-48 w-full rounded-xl bg-black"
+                            playsInline
+                            className="h-40 w-full bg-black object-contain"
                           />
                         ) : null
                       }

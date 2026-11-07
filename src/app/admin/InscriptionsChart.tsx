@@ -38,10 +38,15 @@ export function InscriptionsChart({ data }: Props) {
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#F2F0FF" />
-          <XAxis dataKey="mois" tick={{ fontSize: 12, fill: "#220E4F99" }} />
+          <XAxis
+            dataKey="mois"
+            tick={{ fontSize: 11, fill: "#220E4F99" }}
+            interval="preserveStartEnd"
+          />
           <YAxis
             allowDecimals={false}
-            tick={{ fontSize: 12, fill: "#220E4F99" }}
+            width={28}
+            tick={{ fontSize: 11, fill: "#220E4F99" }}
           />
           <Tooltip
             contentStyle={{

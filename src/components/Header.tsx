@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Menu, UserRound, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/Button";
 import { Logo } from "./Logo";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -51,6 +51,15 @@ export function Header() {
   });
   const roleLabel = isAdmin ? t.nav.admin : t.nav.client;
 
+  useEffect(() => {
+    document.body.classList.toggle("overflow-hidden", open);
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [open]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   function resolveHref(href: string, needsAuth: boolean) {
     if (!needsAuth) return href;
     if (loading || !canAccessContent) {
@@ -64,43 +73,12 @@ export function Header() {
     window.location.href = "/";
   }
 
-  const profileChip = sessionActive ? (
-    <div className="hidden items-center gap-2 sm:flex">
-      <Link
-        href={accountHref}
-        className="inline-flex max-w-[220px] items-center gap-2 rounded-xl border border-brand-100 bg-brand-50/80 px-3 py-1.5 transition hover:bg-brand-100"
-        title={user?.email || name}
-      >
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-700 text-[11px] font-bold text-white">
-          {(name[0] || "U").toUpperCase()}
-        </span>
-        <span className="min-w-0 text-start">
-          <span className="block truncate text-xs font-semibold text-brand-950">
-            {name}
-          </span>
-          <span className="block text-[10px] font-medium text-brand-700">
-            {roleLabel}
-          </span>
-        </span>
-      </Link>
-      <Button href={accountHref} variant="secondary" className="shrink-0">
-        {accountLabel}
-      </Button>
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="inline-flex items-center gap-1 rounded-xl px-2 py-2 text-xs font-semibold text-brand-950/60 hover:bg-brand-50 hover:text-brand-700"
-        title={t.nav.logout}
-      >
-        <LogOut className="h-4 w-4" />
-      </button>
-    </div>
-  ) : null;
-
   return (
     <header className="sticky top-0 z-50 border-b border-brand-100/80 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-4 px-4 sm:h-[4.75rem] sm:px-6 lg:px-8">
-        <Logo variant="header" />
+      <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-2 px-3 sm:h-[4.75rem] sm:gap-4 sm:px-6 lg:px-8">
+        <div className="min-w-0 max-w-[48%] shrink sm:max-w-none">
+          <Logo variant="header" />
+        </div>
 
         <nav className="hidden items-center gap-1 lg:flex">
           {links.map((link) => {
@@ -124,25 +102,58 @@ export function Header() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <div className="hidden md:inline-flex">
+        <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="hidden sm:inline-flex">
             <LocaleSwitcher />
           </div>
           {!loading && sessionActive ? (
-            profileChip
+            <div className="hidden items-center gap-1.5 md:flex">
+              <Link
+                href={accountHref}
+                className="inline-flex max-w-[140px] items-center gap-2 rounded-xl border border-brand-100 bg-brand-50/80 px-2.5 py-1.5 transition hover:bg-brand-100 lg:max-w-[200px]"
+                title={user?.email || name}
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-700 text-[11px] font-bold text-white">
+                  {(name[0] || "U").toUpperCase()}
+                </span>
+                <span className="min-w-0 text-start">
+                  <span className="block truncate text-xs font-semibold text-brand-950">
+                    {name}
+                  </span>
+                  <span className="block text-[10px] font-medium text-brand-700">
+                    {roleLabel}
+                  </span>
+                </span>
+              </Link>
+              <Button
+                href={accountHref}
+                variant="secondary"
+                className="hidden shrink-0 lg:inline-flex"
+              >
+                {accountLabel}
+              </Button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1 rounded-xl px-2 py-2 text-xs font-semibold text-brand-950/60 hover:bg-brand-50 hover:text-brand-700"
+                title={t.nav.logout}
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           ) : (
             <>
               <Button
                 href="/connexion"
                 variant="ghost"
-                className="hidden sm:inline-flex"
+                className="hidden px-3 sm:inline-flex"
               >
                 {t.nav.login}
               </Button>
               <Button
                 href="/inscription"
                 variant="primary"
-                className="hidden sm:inline-flex"
+                className="hidden px-3 sm:inline-flex"
               >
                 {t.nav.signup}
               </Button>
@@ -153,6 +164,7 @@ export function Header() {
             className="rounded-lg p-2 text-brand-950 lg:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-label={t.nav.menu}
+            aria-expanded={open}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -160,8 +172,8 @@ export function Header() {
       </div>
 
       {open && (
-        <div className="border-t border-brand-100 bg-white px-4 py-4 lg:hidden">
-          <div className="mb-3 flex gap-2">
+        <div className="max-h-[calc(100dvh-4.25rem)] overflow-y-auto overscroll-contain border-t border-brand-100 bg-white px-4 py-4 lg:hidden">
+          <div className="mb-3 flex gap-2 sm:hidden">
             {(["fr", "ar"] as Locale[]).map((code) => (
               <button
                 key={code}
@@ -191,7 +203,7 @@ export function Header() {
             {sessionActive ? (
               <div className="mt-3 space-y-2 border-t border-brand-100 pt-3">
                 <div className="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2">
-                  <UserRound className="h-4 w-4 text-brand-700" />
+                  <UserRound className="h-4 w-4 shrink-0 text-brand-700" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-brand-950">
                       {name}
@@ -215,14 +227,14 @@ export function Header() {
                 </button>
               </div>
             ) : (
-              <>
-                <Button href="/connexion" variant="ghost" className="mt-2">
+              <div className="mt-3 space-y-2 border-t border-brand-100 pt-3 sm:hidden">
+                <Button href="/connexion" variant="ghost" className="w-full">
                   {t.nav.login}
                 </Button>
-                <Button href="/inscription" variant="primary">
+                <Button href="/inscription" variant="primary" className="w-full">
                   {t.nav.signup}
                 </Button>
-              </>
+              </div>
             )}
           </nav>
         </div>

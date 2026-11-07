@@ -230,7 +230,7 @@ export default function AffectationPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-brand-950">
+          <h1 className="text-xl font-extrabold text-brand-950 sm:text-2xl">
             {t.admin.assignment}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-brand-950/60">
@@ -260,13 +260,13 @@ export default function AffectationPage() {
       )}
 
       <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/45" />
+        <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/45" />
         <input
           type="search"
           value={listQuery}
           onChange={(e) => setListQuery(e.target.value)}
           placeholder="Rechercher : prénom, nom, email, téléphone…"
-          className="w-full rounded-xl border border-brand-100 bg-white py-2.5 pl-10 pr-3 text-sm outline-none ring-brand-500 focus:ring-2"
+          className="w-full rounded-xl border border-brand-100 bg-white py-2.5 ps-10 pe-3 text-sm outline-none ring-brand-500 focus:ring-2"
         />
       </div>
 
@@ -277,13 +277,13 @@ export default function AffectationPage() {
             : "Aucun client ne correspond à votre recherche."}
         </p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-soft">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-brand-100 bg-white shadow-soft">
+          <table className="w-full min-w-[520px] text-start text-sm">
             <thead className="border-b border-brand-100 bg-brand-50/80 text-xs font-bold uppercase tracking-wider text-brand-700">
               <tr>
                 <th className="px-4 py-3">Client</th>
                 <th className="hidden px-4 py-3 sm:table-cell">Formations</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3 text-end">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-50">

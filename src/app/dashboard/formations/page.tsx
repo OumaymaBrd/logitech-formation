@@ -315,7 +315,7 @@ export default function MesFormationsPage() {
                       <Button
                         href={`/formations/${course.slug}`}
                         variant="primary"
-                        className="min-w-[140px]"
+                        className="w-full min-w-0 sm:w-auto sm:min-w-[140px]"
                       >
                         {meta.cta}
                       </Button>

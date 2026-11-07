@@ -76,11 +76,13 @@ export function Footer() {
           <ul className="space-y-3 text-sm text-white/80">
             <li className="flex items-start gap-2">
               <Phone className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
-              +212 5XX-XXXXXX
+              <span className="min-w-0 break-words">+212 5XX-XXXXXX</span>
             </li>
             <li className="flex items-start gap-2">
               <Mail className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
-              contact@logitech-formation.ma
+              <span className="min-w-0 break-all">
+                contact@logitech-formation.ma
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
@@ -88,7 +90,7 @@ export function Footer() {
                 href={MAPS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white hover:underline"
+                className="min-w-0 break-words hover:text-white hover:underline"
               >
                 {t.footer.location}
               </a>

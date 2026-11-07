@@ -162,7 +162,7 @@ export default function AdminUtilisateursPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-brand-950">
+        <h1 className="text-xl font-extrabold text-brand-950 sm:text-2xl">
           {t.admin.users}
         </h1>
         <p className="mt-1 text-sm text-brand-950/60">{t.admin.usersSubtitle}</p>
@@ -190,7 +190,7 @@ export default function AdminUtilisateursPage() {
             {label}
           </button>
         ))}
-        <Button type="button" variant="ghost" onClick={load} className="ml-auto">
+        <Button type="button" variant="ghost" onClick={load} className="ms-auto">
           Actualiser
         </Button>
       </div>

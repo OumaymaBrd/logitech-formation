@@ -149,7 +149,7 @@ export default function AdminDashboardPage() {
     <div className="mx-auto max-w-6xl space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-brand-950">
+          <h1 className="text-xl font-extrabold text-brand-950 sm:text-2xl">
             {t.admin.dashTitle}
           </h1>
           <p className="mt-1 text-sm text-brand-950/60">{t.admin.dashSubtitle}</p>
@@ -179,8 +179,8 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      <section className="rounded-2xl border border-brand-100 bg-white p-6 shadow-soft">
-        <h2 className="mb-4 text-lg font-bold text-brand-950">
+      <section className="rounded-2xl border border-brand-100 bg-white p-4 shadow-soft sm:p-6">
+        <h2 className="mb-4 text-base font-bold text-brand-950 sm:text-lg">
           {t.admin.chartTitle}
         </h2>
         {loading ? (
@@ -188,7 +188,9 @@ export default function AdminDashboardPage() {
             {t.admin.loading}
           </p>
         ) : (
-          <InscriptionsChart data={chartData} />
+          <div className="min-w-0 overflow-x-auto">
+            <InscriptionsChart data={chartData} />
+          </div>
         )}
       </section>
 

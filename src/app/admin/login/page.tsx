@@ -65,7 +65,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-brand-950 px-4">
-      <div className="w-full max-w-md rounded-[14px] bg-white p-8 shadow-card">
+      <div className="w-full max-w-md rounded-[14px] bg-white p-5 shadow-card sm:p-8">
         <div className="mb-6 flex flex-col items-center gap-3">
           <Logo variant="header" href={null} />
           <h1 className="text-xl font-extrabold text-brand-950">
