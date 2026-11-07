@@ -1,25 +1,46 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PublicShell } from "@/components/layouts/PublicShell";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { formations } from "@/lib/data";
 import { notifyClientEmail } from "@/lib/notify";
+import { friendlyAuthError } from "@/lib/authErrors";
+import { useI18n } from "@/i18n/LanguageProvider";
 
 export default function InscriptionPage() {
-  const { registerClient, configured } = useAuth();
+  const {
+    registerClient,
+    logout,
+    configured,
+    user,
+    loading,
+    isAdmin,
+    isAccepted,
+  } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [formationSlug, setFormationSlug] = useState(formations[0]?.slug ?? "");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) return;
+    if (isAdmin) {
+      router.replace("/admin");
+      return;
+    }
+    if (isAccepted) {
+      router.replace("/dashboard");
+    }
+  }, [loading, user, isAdmin, isAccepted, router]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -27,45 +48,50 @@ export default function InscriptionPage() {
     setPending(true);
     try {
       if (password.length < 6) {
-        throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
+        throw new Error(t.auth.passwordShort);
       }
+      const mail = email.trim();
       await registerClient({
         firstName,
         lastName,
-        email,
+        email: mail,
         phone,
         password,
-        formationSlug,
+        formationSlug: "",
       });
-      // Email stylé : compte créé, en attente de validation admin
       void notifyClientEmail({
         type: "welcome",
-        to: email.trim(),
+        to: mail,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
       });
-      router.replace("/en-attente");
+      await logout();
+      router.replace(`/en-attente?email=${encodeURIComponent(mail)}`);
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Inscription impossible";
-      if (msg.includes("email-already-in-use")) {
-        setError("Cet email est déjà utilisé. Connectez-vous.");
-      } else {
-        setError(msg);
-      }
+      setError(friendlyAuthError(err, t.auth.signupFailed));
     } finally {
       setPending(false);
     }
+  }
+
+  if (loading || (user && (isAdmin || isAccepted))) {
+    return (
+      <PublicShell>
+        <p className="py-16 text-center text-sm text-brand-950/50">
+          {t.auth.redirecting}
+        </p>
+      </PublicShell>
+    );
   }
 
   return (
     <PublicShell>
       <section className="bg-brand-950 px-4 py-12 sm:px-6">
         <div className="mx-auto max-w-7xl">
-          <h1 className="text-3xl font-extrabold text-white">Inscription</h1>
-          <p className="mt-2 text-sm text-white/70">
-            Créez votre compte client.
-          </p>
+          <h1 className="text-3xl font-extrabold text-white">
+            {t.auth.signupTitle}
+          </h1>
+          <p className="mt-2 text-sm text-white/70">{t.auth.signupSubtitle}</p>
         </div>
       </section>
       <section className="mx-auto max-w-xl px-4 py-12 sm:px-6">
@@ -75,12 +101,14 @@ export default function InscriptionPage() {
         >
           {!configured && (
             <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              Firebase n&apos;est pas encore configuré (.env.local + Auth + Firestore).
+              {t.auth.firebaseMissingFull}
             </p>
           )}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold">Prénom *</label>
+              <label className="mb-1 block text-xs font-semibold">
+                {t.auth.firstName} *
+              </label>
               <input
                 required
                 value={firstName}
@@ -89,7 +117,9 @@ export default function InscriptionPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold">Nom *</label>
+              <label className="mb-1 block text-xs font-semibold">
+                {t.auth.lastName} *
+              </label>
               <input
                 required
                 value={lastName}
@@ -99,7 +129,9 @@ export default function InscriptionPage() {
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold">Email *</label>
+            <label className="mb-1 block text-xs font-semibold">
+              {t.auth.email} *
+            </label>
             <input
               type="email"
               required
@@ -109,17 +141,19 @@ export default function InscriptionPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold">Téléphone</label>
+            <label className="mb-1 block text-xs font-semibold">
+              {t.auth.phone}
+            </label>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="w-full rounded-xl border border-brand-100 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="+212 6XX-XXXXXX"
+              placeholder={t.auth.phonePlaceholder}
             />
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold">
-              Mot de passe *
+              {t.auth.password} *
             </label>
             <input
               type="password"
@@ -129,22 +163,6 @@ export default function InscriptionPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-brand-100 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold">
-              Formation souhaitée
-            </label>
-            <select
-              value={formationSlug}
-              onChange={(e) => setFormationSlug(e.target.value)}
-              className="w-full rounded-xl border border-brand-100 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              {formations.map((f) => (
-                <option key={f.id} value={f.slug}>
-                  {f.title} — {f.price.toLocaleString("fr-MA")} DH
-                </option>
-              ))}
-            </select>
           </div>
           {error && (
             <p className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -157,12 +175,12 @@ export default function InscriptionPage() {
             className="w-full"
             disabled={pending || !configured}
           >
-            {pending ? "Inscription…" : "Valider mon inscription"}
+            {pending ? t.auth.submittingSignup : t.auth.submitSignup}
           </Button>
           <p className="text-center text-xs text-brand-950/50">
-            Déjà inscrit ?{" "}
+            {t.auth.hasAccount}{" "}
             <Link href="/connexion" className="font-semibold text-brand-700">
-              Se connecter
+              {t.auth.loginLink}
             </Link>
           </p>
         </form>

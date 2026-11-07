@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
-import { sendAcceptedEmail, sendWelcomeEmail } from "@/lib/mail";
+import {
+  sendAcceptedEmail,
+  sendAssignmentEmail,
+  sendWelcomeEmail,
+  type AssignedCourseMail,
+} from "@/lib/mail";
 
-type MailType = "welcome" | "accepted";
+type MailType = "welcome" | "accepted" | "assignment";
 
 type Body = {
   type?: MailType;
   to?: string;
   firstName?: string;
   lastName?: string;
+  courses?: AssignedCourseMail[];
 };
 
 export async function POST(req: Request) {
@@ -20,9 +26,12 @@ export async function POST(req: Request) {
 
   const type = body.type;
   const to = (body.to || "").trim().toLowerCase();
-  if (!type || (type !== "welcome" && type !== "accepted")) {
+  if (
+    !type ||
+    (type !== "welcome" && type !== "accepted" && type !== "assignment")
+  ) {
     return NextResponse.json(
-      { error: "type doit être welcome ou accepted" },
+      { error: "type doit être welcome, accepted ou assignment" },
       { status: 400 }
     );
   }
@@ -37,10 +46,24 @@ export async function POST(req: Request) {
   };
 
   try {
-    const result =
-      type === "welcome"
-        ? await sendWelcomeEmail(payload)
-        : await sendAcceptedEmail(payload);
+    let result;
+    if (type === "welcome") {
+      result = await sendWelcomeEmail(payload);
+    } else if (type === "accepted") {
+      result = await sendAcceptedEmail(payload);
+    } else {
+      const courses = Array.isArray(body.courses)
+        ? body.courses
+            .filter((c) => c?.title && c?.slug)
+            .map((c) => ({
+              title: String(c.title),
+              slug: String(c.slug),
+              category: c.category ? String(c.category) : "",
+              duration: c.duration ? String(c.duration) : "",
+            }))
+        : [];
+      result = await sendAssignmentEmail({ ...payload, courses });
+    }
 
     if (!result.ok) {
       return NextResponse.json(

@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Award,
   BookOpen,
-  ClipboardList,
   ExternalLink,
-  FileText,
   LayoutDashboard,
   LogOut,
+  Mail,
   User,
   Users,
   PlusCircle,
@@ -17,25 +15,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/components/auth/AuthProvider";
-
-type Item = { href: string; label: string; icon: React.ElementType };
-
-const studentNav: Item[] = [
-  { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/dashboard/formations", label: "Mes formations", icon: BookOpen },
-  { href: "/dashboard/tests", label: "Mes tests", icon: ClipboardList },
-  { href: "/dashboard/documents", label: "Mes documents", icon: FileText },
-  { href: "/dashboard/certificats", label: "Certificats", icon: Award },
-  { href: "/dashboard/profil", label: "Mon profil", icon: User },
-];
-
-const adminNav: Item[] = [
-  { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/admin/ajout-cours", label: "Ajout du cours", icon: PlusCircle },
-  { href: "/admin/formations", label: "Formations", icon: BookOpen },
-  { href: "/admin/affectation", label: "Affectation", icon: UserCheck },
-  { href: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
-];
+import { useI18n } from "@/i18n/LanguageProvider";
 
 type Props = {
   variant: "student" | "admin";
@@ -44,8 +24,25 @@ type Props = {
 export function DashboardSidebar({ variant }: Props) {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const { t } = useI18n();
+
+  const studentNav = [
+    { href: "/dashboard", label: t.admin.dashboard, icon: LayoutDashboard },
+    { href: "/dashboard/formations", label: t.nav.formations, icon: BookOpen },
+    { href: "/dashboard/profil", label: t.nav.user, icon: User },
+  ];
+
+  const adminNav = [
+    { href: "/admin", label: t.admin.dashboard, icon: LayoutDashboard },
+    { href: "/admin/ajout-cours", label: t.admin.addCourse, icon: PlusCircle },
+    { href: "/admin/formations", label: t.admin.formations, icon: BookOpen },
+    { href: "/admin/affectation", label: t.admin.assignment, icon: UserCheck },
+    { href: "/admin/utilisateurs", label: t.admin.users, icon: Users },
+    { href: "/admin/messages", label: t.admin.messages, icon: Mail },
+  ];
+
   const items = variant === "admin" ? adminNav : studentNav;
-  const title = variant === "admin" ? "Admin" : "Espace stagiaire";
+  const title = variant === "admin" ? t.admin.title : t.admin.studentSpace;
 
   async function handleLogout() {
     await logout();
@@ -53,16 +50,16 @@ export function DashboardSidebar({ variant }: Props) {
   }
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-brand-950 text-white">
+    <aside className="flex h-full w-full flex-col bg-brand-950 text-white">
       <div className="shrink-0 border-b border-white/10 px-4 py-4">
-        <Logo variant="sidebar" />
+        <Logo variant="sidebar" href="/" />
         <p className="mt-2 px-1 text-[10px] uppercase tracking-wider text-brand-500">
           {title}
         </p>
       </div>
 
-      <nav className="flex min-h-0 flex-1 flex-col overflow-hidden p-3">
-        <div className="min-h-0 flex-1 space-y-0.5 overflow-hidden">
+      <nav className="flex min-h-0 flex-1 flex-col p-3">
+        <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto">
           {items.map(({ href, label, icon: Icon }) => {
             const active =
               pathname === href ||
@@ -86,25 +83,21 @@ export function DashboardSidebar({ variant }: Props) {
           })}
         </div>
 
-        <div className="mt-auto shrink-0 space-y-0.5 border-t border-white/10 pt-3">
-          {variant === "admin" && (
-            <Link
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
-            >
-              <ExternalLink className="h-4 w-4 shrink-0" />
-              Voir le site
-            </Link>
-          )}
+        <div className="shrink-0 space-y-0.5 border-t border-white/10 pt-3">
+          <Link
+            href="/"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+          >
+            <ExternalLink className="h-4 w-4 shrink-0" />
+            {t.admin.viewSite}
+          </Link>
           <button
             type="button"
             onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-red-500/20 hover:text-white"
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            Déconnexion
+            {t.admin.logout}
           </button>
         </div>
       </nav>

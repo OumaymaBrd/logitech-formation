@@ -13,10 +13,12 @@ import {
 import { Button } from "@/components/ui/Button";
 import { listCourses, setCoursePublished } from "@/lib/courses";
 import type { Course } from "@/lib/types";
+import { useI18n } from "@/i18n/LanguageProvider";
 
 const PAGE_SIZE = 10;
 
 export default function AdminFormationsPage() {
+  const { t } = useI18n();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -75,14 +77,15 @@ export default function AdminFormationsPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-brand-950">Formations</h1>
+          <h1 className="text-2xl font-extrabold text-brand-950">
+            {t.admin.formations}
+          </h1>
           <p className="mt-1 text-sm text-brand-950/60">
-            {courses.length} cours — publiez pour afficher côté client (
-            {PAGE_SIZE} par page).
+            {courses.length} {t.admin.formationsSubtitle}
           </p>
         </div>
         <Button href="/admin/ajout-cours" variant="primary" className="gap-2">
-          <Plus className="h-4 w-4" /> Ajout du cours
+          <Plus className="h-4 w-4" /> {t.admin.addCourse}
         </Button>
       </div>
 

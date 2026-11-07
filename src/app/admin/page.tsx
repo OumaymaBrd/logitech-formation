@@ -2,61 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  BookOpen,
-  Clock,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { BookOpen, Clock, UserPlus, Users } from "lucide-react";
 import { InscriptionsChart, type ChartPoint } from "./InscriptionsChart";
 import { Button } from "@/components/ui/Button";
 import { listCourses } from "@/lib/courses";
 import { listUsers, type AppUser } from "@/lib/users";
 import type { Course } from "@/lib/types";
-
-const MONTHS_FR = [
-  "Jan",
-  "Fév",
-  "Mar",
-  "Avr",
-  "Mai",
-  "Juin",
-  "Juil",
-  "Aoû",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Déc",
-];
+import { useI18n } from "@/i18n/LanguageProvider";
+import { useTranslated } from "@/components/TranslatedText";
 
 function startOfDay(d = new Date()) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-}
-
-function buildMonthlyChart(clients: AppUser[]): ChartPoint[] {
-  const now = new Date();
-  const points: ChartPoint[] = [];
-
-  for (let i = 9; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
-    const count = clients.filter((u) => {
-      if (!u.createdAt) return false;
-      const c = new Date(u.createdAt);
-      return `${c.getFullYear()}-${c.getMonth()}` === key;
-    }).length;
-    points.push({ mois: MONTHS_FR[d.getMonth()], inscriptions: count });
-  }
-  return points;
-}
-
-function formatDate(ts?: number) {
-  if (!ts) return "—";
-  return new Date(ts).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function initials(u: AppUser) {
@@ -70,7 +26,17 @@ function displayName(u: AppUser) {
   return name || u.email || "Utilisateur";
 }
 
+function PopularTitle({ title }: { title: string }) {
+  const translated = useTranslated(title);
+  return (
+    <span className="truncate text-sm font-medium text-brand-950">
+      {translated}
+    </span>
+  );
+}
+
 export default function AdminDashboardPage() {
+  const { t, locale } = useI18n();
   const [courses, setCourses] = useState<Course[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +75,22 @@ export default function AdminDashboardPage() {
     (u) => u.createdAt && u.createdAt >= todayStart
   ).length;
 
-  const chartData = useMemo(() => buildMonthlyChart(clients), [clients]);
+  const chartData = useMemo(() => {
+    const months = t.admin.months;
+    const now = new Date();
+    const points: ChartPoint[] = [];
+    for (let i = 9; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      const count = clients.filter((u) => {
+        if (!u.createdAt) return false;
+        const c = new Date(u.createdAt);
+        return `${c.getFullYear()}-${c.getMonth()}` === key;
+      }).length;
+      points.push({ mois: months[d.getMonth()], inscriptions: count });
+    }
+    return points;
+  }, [clients, t.admin.months]);
 
   const popular = useMemo(() => {
     const counts = new Map<string, number>();
@@ -135,43 +116,50 @@ export default function AdminDashboardPage() {
   const stats = [
     {
       icon: Users,
-      label: "Stagiaires acceptés",
+      label: t.admin.statAccepted,
       value: loading ? "…" : String(accepted.length),
     },
     {
       icon: BookOpen,
-      label: "Formations actives",
+      label: t.admin.statActive,
       value: loading ? "…" : String(published.length),
     },
     {
       icon: UserPlus,
-      label: "Inscriptions aujourd'hui",
+      label: t.admin.statToday,
       value: loading ? "…" : String(todayCount),
     },
     {
       icon: Clock,
-      label: "En attente de validation",
+      label: t.admin.statPending,
       value: loading ? "…" : String(pending.length),
     },
   ];
+
+  function formatDate(ts?: number) {
+    if (!ts) return "—";
+    return new Date(ts).toLocaleDateString(locale === "ar" ? "ar-MA" : "fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-brand-950">
-            Tableau de bord admin
+            {t.admin.dashTitle}
           </h1>
-          <p className="mt-1 text-sm text-brand-950/60">
-            Vue d&apos;ensemble de l&apos;activité du centre.
-          </p>
+          <p className="mt-1 text-sm text-brand-950/60">{t.admin.dashSubtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button href="/admin/ajout-cours" variant="primary">
-            Ajout du cours
+            {t.admin.addCourse}
           </Button>
           <Button href="/admin/utilisateurs" variant="ghost">
-            Utilisateurs
+            {t.admin.users}
           </Button>
         </div>
       </div>
@@ -193,11 +181,11 @@ export default function AdminDashboardPage() {
 
       <section className="rounded-2xl border border-brand-100 bg-white p-6 shadow-soft">
         <h2 className="mb-4 text-lg font-bold text-brand-950">
-          Évolution des inscriptions
+          {t.admin.chartTitle}
         </h2>
         {loading ? (
           <p className="py-16 text-center text-sm text-brand-950/50">
-            Chargement…
+            {t.admin.loading}
           </p>
         ) : (
           <InscriptionsChart data={chartData} />
@@ -208,21 +196,19 @@ export default function AdminDashboardPage() {
         <section className="rounded-2xl border border-brand-100 bg-white p-6 shadow-soft">
           <div className="mb-4 flex items-center justify-between gap-2">
             <h2 className="text-lg font-bold text-brand-950">
-              Formations les plus demandées
+              {t.admin.popularTitle}
             </h2>
             <Link
               href="/admin/formations"
               className="text-xs font-semibold text-brand-700 hover:underline"
             >
-              Voir tout
+              {t.admin.seeAll}
             </Link>
           </div>
           {loading ? (
-            <p className="text-sm text-brand-950/50">Chargement…</p>
+            <p className="text-sm text-brand-950/50">{t.admin.loading}</p>
           ) : popular.length === 0 ? (
-            <p className="text-sm text-brand-950/50">
-              Aucune inscription liée à une formation pour l&apos;instant.
-            </p>
+            <p className="text-sm text-brand-950/50">{t.admin.noPopular}</p>
           ) : (
             <ul className="space-y-3">
               {popular.map((f) => (
@@ -230,11 +216,12 @@ export default function AdminDashboardPage() {
                   key={f.slug}
                   className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 px-3 py-2.5"
                 >
-                  <span className="truncate text-sm font-medium text-brand-950">
-                    {f.title}
-                  </span>
+                  <PopularTitle title={f.title} />
                   <span className="shrink-0 rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-bold text-brand-700">
-                    {f.inscrits} inscrit{f.inscrits > 1 ? "s" : ""}
+                    {f.inscrits}{" "}
+                    {f.inscrits > 1
+                      ? t.admin.enrolledPlural
+                      : t.admin.enrolled}
                   </span>
                 </li>
               ))}
@@ -245,21 +232,19 @@ export default function AdminDashboardPage() {
         <section className="rounded-2xl border border-brand-100 bg-white p-6 shadow-soft">
           <div className="mb-4 flex items-center justify-between gap-2">
             <h2 className="text-lg font-bold text-brand-950">
-              Dernières inscriptions
+              {t.admin.recentTitle}
             </h2>
             <Link
               href="/admin/utilisateurs"
               className="text-xs font-semibold text-brand-700 hover:underline"
             >
-              Gérer
+              {t.admin.manage}
             </Link>
           </div>
           {loading ? (
-            <p className="text-sm text-brand-950/50">Chargement…</p>
+            <p className="text-sm text-brand-950/50">{t.admin.loading}</p>
           ) : recent.length === 0 ? (
-            <p className="text-sm text-brand-950/50">
-              Aucun stagiaire inscrit pour le moment.
-            </p>
+            <p className="text-sm text-brand-950/50">{t.admin.noRecent}</p>
           ) : (
             <ul className="space-y-3">
               {recent.map((u) => (
@@ -272,7 +257,7 @@ export default function AdminDashboardPage() {
                       {displayName(u)}
                     </p>
                     <p className="truncate text-xs text-brand-950/50">
-                      {u.formationSlug || "Sans formation"} · {u.status}
+                      {u.formationSlug || t.admin.noFormation} · {u.status}
                     </p>
                   </div>
                   <span className="shrink-0 text-xs text-brand-950/40">

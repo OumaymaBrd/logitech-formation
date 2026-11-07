@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { categories } from "@/lib/data";
 import { createCourse, slugify } from "@/lib/courses";
+import { useI18n } from "@/i18n/LanguageProvider";
 
 type MediaMode = "media" | "none";
 type ModalPhase = "idle" | "uploading" | "saving" | "done" | "error";
@@ -83,6 +84,7 @@ function FileDropZone({
 }
 
 export default function AjoutCoursPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -92,7 +94,7 @@ export default function AjoutCoursPage() {
   const [createdSlug, setCreatedSlug] = useState("");
 
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState(categories[1] ?? "Grues");
+  const [category, setCategory] = useState<string>(categories[1] ?? "Grues");
   const [duration, setDuration] = useState("5 jours");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
@@ -215,10 +217,10 @@ export default function AjoutCoursPage() {
     <div className="mx-auto w-full max-w-3xl pb-8">
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold tracking-tight text-brand-950">
-          Ajout du cours
+          {t.admin.addCourse}
         </h1>
         <p className="mt-1 text-sm text-brand-950/55">
-          Importez une photo, une vidéo, ou les deux — fichiers uniquement.
+          {t.admin.addCourseSubtitle}
         </p>
       </div>
 
@@ -227,36 +229,35 @@ export default function AjoutCoursPage() {
         className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-soft"
       >
         <div className="space-y-6 p-5 sm:p-7">
-          {/* Infos générales */}
           <section className="space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700">
-              Informations
+              {t.admin.formInfo}
             </h2>
 
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-brand-950">
-                Titre du cours *
+                {t.admin.courseTitle} *
               </label>
               <input
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full rounded-xl border border-brand-100 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                placeholder="Ex: Conduite de grue mobile"
+                placeholder={t.admin.courseTitlePh}
               />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-brand-950">
-                  Catégorie
+                  {t.admin.category}
                 </label>
                 <input
                   list="category-suggestions"
                   required
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Choisir ou saisir une catégorie…"
+                  placeholder={t.admin.categoryPh}
                   className="w-full rounded-xl border border-brand-100 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                 />
                 <datalist id="category-suggestions">
@@ -267,12 +268,12 @@ export default function AjoutCoursPage() {
                     ))}
                 </datalist>
                 <p className="mt-1 text-[11px] text-brand-950/45">
-                  Suggestions disponibles, ou tapez une catégorie libre.
+                  {t.admin.categoryHint}
                 </p>
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-brand-950">
-                  Durée
+                  {t.admin.duration}
                 </label>
                 <input
                   value={duration}
@@ -290,7 +291,7 @@ export default function AjoutCoursPage() {
                   onChange={(e) => setTheory(e.target.checked)}
                   className="accent-brand-700"
                 />
-                Théorie
+                {t.admin.theory}
               </label>
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-brand-100 bg-brand-50/50 px-3.5 py-2 text-sm text-brand-950">
                 <input
@@ -299,21 +300,20 @@ export default function AjoutCoursPage() {
                   onChange={(e) => setPractice(e.target.checked)}
                   className="accent-brand-700"
                 />
-                Pratique
+                {t.admin.practice}
               </label>
             </div>
           </section>
 
           <hr className="border-brand-100" />
 
-          {/* Contenu */}
           <section className="space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700">
-              Contenu
+              {t.admin.formContent}
             </h2>
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-brand-950">
-                Description courte *
+                {t.admin.shortDesc} *
               </label>
               <textarea
                 required
@@ -325,13 +325,13 @@ export default function AjoutCoursPage() {
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-brand-950">
-                Contenu de la leçon
+                {t.admin.lessonContent}
               </label>
               <textarea
                 rows={5}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Texte affiché dans l'espace leçon"
+                placeholder={t.admin.lessonContentPh}
                 className="w-full resize-y rounded-xl border border-brand-100 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
@@ -339,10 +339,9 @@ export default function AjoutCoursPage() {
 
           <hr className="border-brand-100" />
 
-          {/* Médias */}
           <section className="space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700">
-              Médias
+              {t.admin.formMedia}
             </h2>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -352,7 +351,7 @@ export default function AjoutCoursPage() {
                   setMediaMode("media");
                   if (!wantPhoto && !wantVideo) setWantPhoto(true);
                 }}
-                className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${
+                className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 text-start transition ${
                   mediaMode === "media"
                     ? "border-brand-700 bg-brand-100/80 text-brand-700 shadow-sm"
                     : "border-brand-100 text-brand-950/80 hover:bg-brand-50"
@@ -361,10 +360,10 @@ export default function AjoutCoursPage() {
                 <Upload className="mt-0.5 h-5 w-5 shrink-0" />
                 <span>
                   <span className="block text-sm font-semibold">
-                    Photo et / ou vidéo
+                    {t.admin.mediaPhotoVideo}
                   </span>
                   <span className="mt-0.5 block text-xs opacity-70">
-                    Uploader un ou deux fichiers
+                    {t.admin.mediaPhotoVideoHint}
                   </span>
                 </span>
               </button>
@@ -376,7 +375,7 @@ export default function AjoutCoursPage() {
                   setVideoFile(null);
                   setProgress(0);
                 }}
-                className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${
+                className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 text-start transition ${
                   mediaMode === "none"
                     ? "border-brand-700 bg-brand-100/80 text-brand-700 shadow-sm"
                     : "border-brand-100 text-brand-950/80 hover:bg-brand-50"
@@ -385,10 +384,10 @@ export default function AjoutCoursPage() {
                 <FileText className="mt-0.5 h-5 w-5 shrink-0" />
                 <span>
                   <span className="block text-sm font-semibold">
-                    Texte uniquement
+                    {t.admin.mediaTextOnly}
                   </span>
                   <span className="mt-0.5 block text-xs opacity-70">
-                    Aucun fichier média
+                    {t.admin.mediaTextOnlyHint}
                   </span>
                 </span>
               </button>
@@ -414,7 +413,7 @@ export default function AjoutCoursPage() {
                       }}
                     />
                     <ImageIcon className="h-4 w-4" />
-                    Photo
+                    {t.admin.photo}
                   </label>
                   <label
                     className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition ${
@@ -433,7 +432,7 @@ export default function AjoutCoursPage() {
                       }}
                     />
                     <Video className="h-4 w-4" />
-                    Vidéo
+                    {t.admin.video}
                   </label>
                 </div>
 
@@ -445,8 +444,8 @@ export default function AjoutCoursPage() {
                   {wantPhoto && (
                     <FileDropZone
                       accept="image/*"
-                      label="Upload image *"
-                      hint="JPG, PNG, WEBP — max 8 Mo"
+                      label={t.admin.uploadImage}
+                      hint={t.admin.uploadImageHint}
                       file={photoFile}
                       required
                       onChange={(f) => {
@@ -458,7 +457,7 @@ export default function AjoutCoursPage() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={photoPreview}
-                            alt="Aperçu"
+                            alt=""
                             className="mt-3 max-h-40 w-full rounded-xl object-cover"
                           />
                         ) : null
@@ -468,8 +467,8 @@ export default function AjoutCoursPage() {
                   {wantVideo && (
                     <FileDropZone
                       accept="video/mp4,video/webm,video/quicktime,video/*"
-                      label="Upload vidéo *"
-                      hint="MP4 / WEBM — max 80 Mo"
+                      label={t.admin.uploadVideo}
+                      hint={t.admin.uploadVideoHint}
                       file={videoFile}
                       required
                       onChange={(f) => {
@@ -494,7 +493,6 @@ export default function AjoutCoursPage() {
 
         </div>
 
-        {/* Actions */}
         <div className="flex justify-end border-t border-brand-100 bg-brand-50/40 px-5 py-4 sm:px-7">
           <Button
             type="submit"
@@ -504,14 +502,13 @@ export default function AjoutCoursPage() {
           >
             {pending
               ? progress > 0
-                ? `Upload ${progress}%…`
-                : "Enregistrement…"
-              : "Ajouter le cours"}
+                ? `${t.admin.uploadingPct} ${progress}%…`
+                : t.admin.saving
+              : t.admin.addCourseBtn}
           </Button>
         </div>
       </form>
 
-      {/* Modal avancement */}
       {modalPhase !== "idle" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-950/55 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-card">
@@ -519,19 +516,16 @@ export default function AjoutCoursPage() {
               <div>
                 <h3 className="text-lg font-extrabold text-brand-950">
                   {modalPhase === "done"
-                    ? "Cours créé"
+                    ? t.admin.courseCreated
                     : modalPhase === "error"
-                      ? "Erreur"
-                      : "Publication en cours"}
+                      ? t.admin.errorTitle
+                      : t.admin.publishing}
                 </h3>
                 <p className="mt-1 text-sm text-brand-950/55">
-                  {modalPhase === "uploading" &&
-                    "Upload des fichiers vers Firebase Storage…"}
-                  {modalPhase === "saving" &&
-                    "Enregistrement du cours dans Firestore…"}
-                  {modalPhase === "done" &&
-                    "Redirection vers la liste des formations…"}
-                  {modalPhase === "error" && "La création a échoué."}
+                  {modalPhase === "uploading" && t.admin.uploadingFiles}
+                  {modalPhase === "saving" && t.admin.savingCourse}
+                  {modalPhase === "done" && t.admin.redirectingList}
+                  {modalPhase === "error" && t.admin.createFailed}
                 </p>
               </div>
               {modalPhase === "error" && (
@@ -539,7 +533,7 @@ export default function AjoutCoursPage() {
                   type="button"
                   onClick={() => setModalPhase("idle")}
                   className="rounded-lg p-1 text-brand-950/50 hover:bg-brand-50 hover:text-brand-950"
-                  aria-label="Fermer"
+                  aria-label={t.admin.close}
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -551,8 +545,8 @@ export default function AjoutCoursPage() {
                 <div className="flex items-center gap-2 text-sm font-medium text-brand-700">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   {modalPhase === "uploading"
-                    ? `Upload ${progress}%`
-                    : "Finalisation…"}
+                    ? `${t.admin.uploadingPct} ${progress}%`
+                    : t.admin.finalizing}
                 </div>
                 <div className="h-2.5 overflow-hidden rounded-full bg-brand-100">
                   <div
@@ -573,7 +567,7 @@ export default function AjoutCoursPage() {
               <div className="flex items-start gap-3 rounded-xl bg-green-50 px-3.5 py-3 text-sm text-green-800">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
-                  <p className="font-semibold">Cours enregistré avec succès.</p>
+                  <p className="font-semibold">{t.admin.courseSaved}</p>
                   {createdSlug && (
                     <p className="mt-0.5 text-xs text-green-700/80">
                       /formations/{createdSlug}
@@ -594,7 +588,7 @@ export default function AjoutCoursPage() {
                   className="w-full"
                   onClick={() => setModalPhase("idle")}
                 >
-                  Réessayer
+                  {t.admin.retry}
                 </Button>
               </div>
             )}

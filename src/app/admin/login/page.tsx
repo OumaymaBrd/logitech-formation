@@ -12,9 +12,13 @@ import {
   isAdminRememberChecked,
   saveRememberedAdminEmail,
 } from "@/lib/firebase";
+import { friendlyAuthError } from "@/lib/authErrors";
+import { useI18n } from "@/i18n/LanguageProvider";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 export default function AdminLoginPage() {
   const { login, configured, loading, user, isAdmin, logout } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,7 +58,7 @@ export default function AdminLoginPage() {
       }
       router.replace("/admin");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Connexion impossible");
+      setError(friendlyAuthError(err, "Connexion impossible."));
     } finally {
       setPending(false);
     }
@@ -65,10 +69,13 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md rounded-[14px] bg-white p-8 shadow-card">
         <div className="mb-6 flex flex-col items-center gap-3">
           <Logo variant="header" href={null} />
-          <h1 className="text-xl font-extrabold text-brand-950">Espace admin</h1>
+          <h1 className="text-xl font-extrabold text-brand-950">
+            {t.admin.loginAdminTitle}
+          </h1>
           <p className="text-center text-sm text-brand-950/60">
-            Connexion réservée aux administrateurs.
+            {t.admin.loginAdminSubtitle}
           </p>
+          <LocaleSwitcher variant="light" />
         </div>
 
         {!configured && (

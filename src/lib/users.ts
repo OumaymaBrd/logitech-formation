@@ -151,3 +151,21 @@ export async function setUserStatus(uid: string, status: UserStatus) {
     updatedAt: serverTimestamp(),
   });
 }
+
+export async function updateClientProfile(
+  uid: string,
+  data: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+  }
+) {
+  const db = getFirebaseDb();
+  if (!db) throw new Error("Firebase non configuré");
+  await updateDoc(doc(db, "users", uid), {
+    firstName: data.firstName.trim(),
+    lastName: data.lastName.trim(),
+    phone: data.phone.trim(),
+    updatedAt: serverTimestamp(),
+  });
+}

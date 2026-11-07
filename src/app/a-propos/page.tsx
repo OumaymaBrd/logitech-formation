@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import {
   Award,
@@ -9,40 +11,28 @@ import {
 import { PublicShell } from "@/components/layouts/PublicShell";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/Button";
+import { useI18n } from "@/i18n/LanguageProvider";
 
-export const metadata = { title: "À propos" };
-
-const values = [
-  {
-    icon: Award,
-    title: "Formations certifiantes",
-    text: "Des parcours reconnus pour valider vos compétences sur engins de chantier.",
-  },
-  {
-    icon: BookOpen,
-    title: "Théorie + pratique",
-    text: "Apprentissage réglementaire complété par des mises en situation terrain.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Sécurité & normes",
-    text: "Respect des procédures et bonnes pratiques pour travailler en toute sécurité.",
-  },
-  {
-    icon: Users,
-    title: "Formateurs experts",
-    text: "Une équipe expérimentée pour accompagner chaque stagiaire jusqu’à la certification.",
-  },
-];
+const MAPS_URL =
+  "https://www.google.com/maps/place/Opal+Dental+Center+-+Dr.EL+IDRISSI+NIHAD/@35.754921,-5.8280544,17z/data=!4m6!3m5!1s0xd0b870024fc6247:0x755124c5632764d3!8m2!3d35.7549286!4d-5.8280503!16s%2Fg%2F11m6vl3bn_?hl=fr";
 
 export default function AProposPage() {
+  const { t } = useI18n();
+
+  const values = [
+    { icon: Award, title: t.about.v1Title, text: t.about.v1Text },
+    { icon: BookOpen, title: t.about.v2Title, text: t.about.v2Text },
+    { icon: ShieldCheck, title: t.about.v3Title, text: t.about.v3Text },
+    { icon: Users, title: t.about.v4Title, text: t.about.v4Text },
+  ];
+
   return (
     <PublicShell>
       <section className="bg-brand-950 px-4 py-12 sm:px-6">
         <div className="mx-auto max-w-7xl">
-          <h1 className="text-3xl font-extrabold text-white">À propos</h1>
+          <h1 className="text-3xl font-extrabold text-white">{t.about.title}</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/70">
-            Logitech Formation — votre partenaire formation à Tanger.
+            {t.about.subtitle}
           </p>
         </div>
       </section>
@@ -52,51 +42,55 @@ export default function AProposPage() {
           <div className="relative min-h-[260px] sm:min-h-[340px] lg:min-h-full">
             <Image
               src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80"
-              alt="Formation professionnelle sur chantier"
+              alt=""
               fill
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 50vw"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-brand-950/70 via-brand-950/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-brand-700 shadow-sm">
+            <div className="absolute bottom-0 inset-inline-start-0 inset-inline-end-0 p-5 sm:p-6">
+              <a
+                href={MAPS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-brand-700 shadow-sm transition hover:bg-white hover:text-brand-800"
+              >
                 <MapPin className="h-3.5 w-3.5" />
-                Tanger, Maroc
-              </div>
+                {t.about.location}
+              </a>
             </div>
           </div>
 
           <div className="flex flex-col justify-center gap-5 p-6 sm:p-8 lg:p-10">
-            <Logo variant="header" href={null} className="h-10 w-auto self-start sm:h-11" />
+            <Logo
+              variant="header"
+              href={null}
+              className="h-10 w-auto self-start sm:h-11"
+            />
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-brand-700">
-                Centre de formation
+                {t.about.badge}
               </p>
               <h2 className="mt-1 text-2xl font-extrabold text-brand-950">
-                Qui sommes-nous ?
+                {t.about.whoTitle}
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-brand-950/75">
-              Depuis plus de 5 ans, Logitech Formation accompagne les stagiaires
-              et les entreprises dans la maîtrise des engins de chantier :
-              chariots élévateurs, Manitous, excavatrices, nacelles et grues.
+              {t.about.p1}
             </p>
             <p className="text-sm leading-relaxed text-brand-950/75">
-              Nos formateurs experts allient théorie réglementaire et pratique
-              terrain pour garantir des compétences opérationnelles et des
-              certifications reconnues.
+              {t.about.p2}
             </p>
             <p className="text-sm leading-relaxed text-brand-950/75">
-              Basés à Tanger, nous proposons des parcours en présentiel et en
-              e-learning pour s&apos;adapter à votre rythme.
+              {t.about.p3}
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
               <Button href="/formations" variant="primary">
-                Voir les formations
+                {t.about.seeFormations}
               </Button>
               <Button href="/contact" variant="ghost">
-                Nous contacter
+                {t.about.contactUs}
               </Button>
             </div>
           </div>

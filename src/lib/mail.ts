@@ -7,6 +7,17 @@ export type MailPayload = {
   lastName?: string;
 };
 
+export type AssignedCourseMail = {
+  title: string;
+  slug: string;
+  category?: string;
+  duration?: string;
+};
+
+export type AssignmentMailPayload = MailPayload & {
+  courses: AssignedCourseMail[];
+};
+
 function appUrl() {
   return (
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
@@ -102,7 +113,7 @@ export function buildWelcomeEmail(p: MailPayload) {
       </p>
       <p style="margin:0 0 12px;">
         Un administrateur doit encore <strong>accepter votre inscription</strong>
-        avant que vous puissiez accéder à l&apos;espace stagiaire et aux formations.
+        avant que vous puissiez accéder à l&apos;espace étudiant et aux formations.
       </p>
       <p style="margin:0;">
         Vous recevrez un nouvel email dès que votre compte sera validé.
@@ -122,7 +133,7 @@ export function buildAcceptedEmail(p: MailPayload) {
   const spaceUrl = `${appUrl()}/connexion?next=${encodeURIComponent("/dashboard")}`;
   const html = emailLayout({
     title: "Votre compte a été accepté",
-    preheader: "Accédez dès maintenant à votre espace stagiaire.",
+    preheader: "Accédez dès maintenant à votre espace étudiant.",
     bodyHtml: `
       <p style="margin:0 0 12px;">Bonjour <strong>${name}</strong>,</p>
       <p style="margin:0 0 12px;">
@@ -130,7 +141,7 @@ export function buildAcceptedEmail(p: MailPayload) {
         Logitech Formation.
       </p>
       <p style="margin:0 0 12px;">
-        Vous pouvez maintenant vous connecter et accéder à votre espace stagiaire
+        Vous pouvez maintenant vous connecter et accéder à votre espace étudiant
         pour consulter les formations qui vous seront affectées.
       </p>
       <p style="margin:0;">
@@ -200,6 +211,68 @@ export async function sendMail(to: string, subject: string, html: string) {
   };
 }
 
+export function buildAssignmentEmail(p: AssignmentMailPayload) {
+  const name = displayName(p);
+  const courses = p.courses || [];
+  const count = courses.length;
+  const brand = "#5b21b6";
+  const listHtml =
+    courses.length === 0
+      ? "<p>Aucune formation.</p>"
+      : `<ul style="margin:12px 0 16px;padding:0;list-style:none;">
+          ${courses
+            .map((c) => {
+              const href = `${appUrl()}/formations/${encodeURIComponent(c.slug)}`;
+              const meta = [c.category, c.duration].filter(Boolean).join(" · ");
+              return `<li style="margin:0 0 10px;padding:12px 14px;border:1px solid #eee8fa;border-radius:12px;background:#f7f4fc;">
+                <div style="font-weight:700;color:#1e0a3c;font-size:15px;">${c.title}</div>
+                ${meta ? `<div style="margin-top:4px;font-size:12px;color:#71717a;">${meta}</div>` : ""}
+                <a href="${href}" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:${brand};text-decoration:none;">
+                  Ouvrir la formation →
+                </a>
+              </li>`;
+            })
+            .join("")}
+        </ul>`;
+
+  const ctaHref =
+    count === 1 && courses[0]?.slug
+      ? `${appUrl()}/connexion?next=${encodeURIComponent(`/formations/${courses[0].slug}`)}`
+      : `${appUrl()}/connexion?next=${encodeURIComponent("/dashboard/formations")}`;
+
+  const html = emailLayout({
+    title:
+      count === 1
+        ? "Nouvelle formation affectée"
+        : `${count} formations vous ont été affectées`,
+    preheader:
+      count === 1
+        ? `Formation : ${courses[0]?.title || ""}`
+        : `${count} formations sont disponibles dans votre espace.`,
+    bodyHtml: `
+      <p style="margin:0 0 12px;">Bonjour <strong>${name}</strong>,</p>
+      <p style="margin:0 0 12px;">
+        Un administrateur vous a affecté
+        <strong>${count} formation${count > 1 ? "s" : ""}</strong>
+        sur <strong>Logitech Formation</strong>.
+      </p>
+      ${listHtml}
+      <p style="margin:0;">
+        Connectez-vous pour y accéder depuis votre espace étudiant.
+      </p>
+    `,
+    ctaLabel: count === 1 ? "Voir la formation" : "Voir mes formations",
+    ctaHref,
+  });
+
+  const subject =
+    count === 1
+      ? `Logitech Formation — Formation affectée : ${courses[0]?.title || ""}`
+      : `Logitech Formation — ${count} formations vous ont été affectées`;
+
+  return { subject, html };
+}
+
 export async function sendWelcomeEmail(p: MailPayload) {
   const { subject, html } = buildWelcomeEmail(p);
   return sendMail(p.to, subject, html);
@@ -207,5 +280,17 @@ export async function sendWelcomeEmail(p: MailPayload) {
 
 export async function sendAcceptedEmail(p: MailPayload) {
   const { subject, html } = buildAcceptedEmail(p);
+  return sendMail(p.to, subject, html);
+}
+
+export async function sendAssignmentEmail(p: AssignmentMailPayload) {
+  if (!p.courses?.length) {
+    return {
+      ok: false as const,
+      skipped: true as const,
+      reason: "Aucune formation à notifier",
+    };
+  }
+  const { subject, html } = buildAssignmentEmail(p);
   return sendMail(p.to, subject, html);
 }

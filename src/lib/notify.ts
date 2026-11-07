@@ -1,9 +1,12 @@
+import type { AssignedCourseMail } from "@/lib/mail";
+
 /** Déclenche un email côté serveur (ne bloque pas l'UX si échec). */
 export async function notifyClientEmail(opts: {
-  type: "welcome" | "accepted";
+  type: "welcome" | "accepted" | "assignment";
   to: string;
   firstName?: string;
   lastName?: string;
+  courses?: AssignedCourseMail[];
 }) {
   try {
     const res = await fetch("/api/mail", {
@@ -14,6 +17,7 @@ export async function notifyClientEmail(opts: {
         to: opts.to,
         firstName: opts.firstName || "",
         lastName: opts.lastName || "",
+        courses: opts.courses || [],
       }),
     });
     return await res.json();

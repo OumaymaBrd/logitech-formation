@@ -1,8 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { BookOpen, Clock, Wrench } from "lucide-react";
 import { formatPrice } from "@/lib/data";
 import { Button } from "./ui/Button";
+import { useI18n } from "@/i18n/LanguageProvider";
+import { useTranslated } from "@/components/TranslatedText";
 
 export type CourseCardData = {
   id: string;
@@ -21,6 +25,9 @@ type Props = {
 };
 
 export function CourseCard({ formation, showPrice = false }: Props) {
+  const { t } = useI18n();
+  const title = useTranslated(formation.title);
+  const duration = useTranslated(formation.duration);
   const src = formation.image || "";
   const isRemote = src.startsWith("http");
   const isFirebase = src.includes("firebasestorage");
@@ -32,7 +39,7 @@ export function CourseCard({ formation, showPrice = false }: Props) {
           isRemote ? (
             <Image
               src={src}
-              alt={formation.title}
+              alt={title}
               fill
               className="object-cover transition duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, 33vw"
@@ -42,31 +49,31 @@ export function CourseCard({ formation, showPrice = false }: Props) {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={src}
-              alt={formation.title}
+              alt={title}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
             />
           )
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-brand-700">
-            Pas d&apos;image
+            {t.formations.noImage}
           </div>
         )}
       </div>
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <h3 className="text-base font-bold text-brand-950">{formation.title}</h3>
+        <h3 className="text-base font-bold text-brand-950">{title}</h3>
         <div className="flex flex-wrap items-center gap-3 text-xs text-brand-700/80">
           {formation.theory && (
             <span className="inline-flex items-center gap-1">
-              <BookOpen className="h-3.5 w-3.5" /> Théorie
+              <BookOpen className="h-3.5 w-3.5" /> {t.formations.theory}
             </span>
           )}
           {formation.practice && (
             <span className="inline-flex items-center gap-1">
-              <Wrench className="h-3.5 w-3.5" /> Pratique
+              <Wrench className="h-3.5 w-3.5" /> {t.formations.practice}
             </span>
           )}
           <span className="inline-flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" /> {formation.duration}
+            <Clock className="h-3.5 w-3.5" /> {duration}
           </span>
         </div>
         {showPrice && formation.price > 0 && (
@@ -80,7 +87,7 @@ export function CourseCard({ formation, showPrice = false }: Props) {
             variant="primary"
             className="w-full"
           >
-            {showPrice ? "Voir la formation" : "En savoir plus"}
+            {showPrice ? t.formations.seeCourse : t.formations.learnMore}
           </Button>
         </div>
       </div>

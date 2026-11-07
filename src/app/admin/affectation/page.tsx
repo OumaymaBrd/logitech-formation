@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Check, Save, UserRound } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Pencil, Plus, Save, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { listUsers, type AppUser } from "@/lib/users";
 import { listCourses } from "@/lib/courses";
@@ -9,7 +9,9 @@ import {
   getAssignedCourseIds,
   setAssignedCourses,
 } from "@/lib/assignments";
+import { notifyClientEmail } from "@/lib/notify";
 import type { Course } from "@/lib/types";
+import { useI18n } from "@/i18n/LanguageProvider";
 
 function clientLabel(u: AppUser) {
   const name = `${u.firstName || ""} ${u.lastName || ""}`.trim();
@@ -17,80 +19,156 @@ function clientLabel(u: AppUser) {
 }
 
 export default function AffectationPage() {
+  const { t } = useI18n();
   const [clients, setClients] = useState<AppUser[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  /** uid → course ids affectés */
+  const [assignMap, setAssignMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
-  const [loadingAssign, setLoadingAssign] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [listQuery, setListQuery] = useState("");
 
-  useEffect(() => {
-    Promise.all([
-      listUsers(),
-      listCourses({ publishedOnly: false, fallbackStatic: false }),
-    ])
-      .then(([users, courseList]) => {
-        setClients(
-          users.filter((u) => u.role === "client" && u.status === "accepted")
-        );
-        setCourses(courseList);
-      })
-      .catch((e) =>
-        setError(e instanceof Error ? e.message : "Chargement impossible")
-      )
-      .finally(() => setLoading(false));
+  // Modal formulaire
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [clientQuery, setClientQuery] = useState("");
+  const [courseQuery, setCourseQuery] = useState("");
+  const [loadingAssign, setLoadingAssign] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const courseById = useMemo(() => {
+    const m = new Map<string, Course>();
+    for (const c of courses) m.set(c.id, c);
+    return m;
+  }, [courses]);
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [users, courseList] = await Promise.all([
+        listUsers(),
+        listCourses({ publishedOnly: false, fallbackStatic: false }),
+      ]);
+      const accepted = users.filter(
+        (u) => u.role === "client" && u.status === "accepted"
+      );
+      setClients(accepted);
+      setCourses(courseList);
+
+      const entries = await Promise.all(
+        accepted.map(async (u) => {
+          const ids = await getAssignedCourseIds(u.uid);
+          return [u.uid, ids] as const;
+        })
+      );
+      const map: Record<string, string[]> = {};
+      for (const [uid, ids] of entries) map[uid] = ids;
+      setAssignMap(map);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Chargement impossible");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (!selectedUserId) {
-      setSelectedCourseIds([]);
-      return;
-    }
-    let cancelled = false;
-    setLoadingAssign(true);
-    setSuccess("");
-    getAssignedCourseIds(selectedUserId)
-      .then((ids) => {
-        if (!cancelled) setSelectedCourseIds(ids);
+    void loadAll();
+  }, [loadAll]);
+
+  const filteredClients = useMemo(() => {
+    const q = listQuery.trim().toLowerCase();
+    if (!q) return clients;
+    const qDigits = q.replace(/\D/g, "");
+    return clients.filter((u) => {
+      const phoneDigits = (u.phone || "").replace(/\D/g, "");
+      const hay =
+        `${u.firstName} ${u.lastName} ${u.email} ${u.phone}`.toLowerCase();
+      if (hay.includes(q)) return true;
+      if (qDigits.length >= 2 && phoneDigits.includes(qDigits)) return true;
+      return false;
+    });
+  }, [clients, listQuery]);
+
+  const modalClientResults = useMemo(() => {
+    const q = clientQuery.trim().toLowerCase();
+    // Ne rien afficher tant qu'il n'y a pas de recherche
+    if (!q) return [];
+    const qDigits = q.replace(/\D/g, "");
+    return clients
+      .filter((u) => {
+        const phoneDigits = (u.phone || "").replace(/\D/g, "");
+        const hay =
+          `${u.firstName} ${u.lastName} ${u.email} ${u.phone}`.toLowerCase();
+        if (hay.includes(q)) return true;
+        // Recherche téléphone (chiffres uniquement)
+        if (qDigits.length >= 2 && phoneDigits.includes(qDigits)) return true;
+        return false;
       })
-      .catch((e) => {
-        if (!cancelled) {
-          setError(
-            e instanceof Error ? e.message : "Impossible de charger l'affectation"
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingAssign(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedUserId]);
+      .slice(0, 10);
+  }, [clients, clientQuery]);
+
+  const modalCourseResults = useMemo(() => {
+    const q = courseQuery.trim().toLowerCase();
+    if (!q) return courses;
+    return courses.filter((c) => {
+      const hay = `${c.title} ${c.category}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [courses, courseQuery]);
 
   const selectedClient = useMemo(
     () => clients.find((c) => c.uid === selectedUserId) || null,
     [clients, selectedUserId]
   );
 
+  function openCreate() {
+    setSelectedUserId("");
+    setSelectedCourseIds([]);
+    setClientQuery("");
+    setCourseQuery("");
+    setError("");
+    setSuccess("");
+    setModalOpen(true);
+  }
+
+  async function openEdit(u: AppUser) {
+    setSelectedUserId(u.uid);
+    setClientQuery(clientLabel(u));
+    setCourseQuery("");
+    setError("");
+    setSuccess("");
+    setModalOpen(true);
+    setLoadingAssign(true);
+    try {
+      const ids = await getAssignedCourseIds(u.uid);
+      setSelectedCourseIds(ids);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Impossible de charger l'affectation"
+      );
+      setSelectedCourseIds(assignMap[u.uid] || []);
+    } finally {
+      setLoadingAssign(false);
+    }
+  }
+
+  function pickClient(u: AppUser) {
+    setSelectedUserId(u.uid);
+    setClientQuery(clientLabel(u));
+    setLoadingAssign(true);
+    getAssignedCourseIds(u.uid)
+      .then((ids) => setSelectedCourseIds(ids))
+      .catch(() => setSelectedCourseIds(assignMap[u.uid] || []))
+      .finally(() => setLoadingAssign(false));
+  }
+
   function toggleCourse(id: string) {
     setSelectedCourseIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-    setSuccess("");
-  }
-
-  function selectAll() {
-    setSelectedCourseIds(courses.map((c) => c.id));
-    setSuccess("");
-  }
-
-  function clearAll() {
-    setSelectedCourseIds([]);
-    setSuccess("");
   }
 
   async function onSave() {
@@ -99,13 +177,40 @@ export default function AffectationPage() {
       return;
     }
     setError("");
-    setSuccess("");
     setSaving(true);
     try {
-      await setAssignedCourses(selectedUserId, selectedCourseIds);
+      const previousIds = assignMap[selectedUserId] || [];
+      const ids = await setAssignedCourses(selectedUserId, selectedCourseIds);
+      setAssignMap((prev) => ({ ...prev, [selectedUserId]: ids }));
+
+      // Email stylé uniquement pour les nouvelles formations ajoutées
+      const newlyAdded = ids.filter((id) => !previousIds.includes(id));
+      if (newlyAdded.length > 0 && selectedClient?.email) {
+        const courses = newlyAdded
+          .map((id) => courseById.get(id))
+          .filter(Boolean)
+          .map((c) => ({
+            title: c!.title,
+            slug: c!.slug,
+            category: c!.category || "",
+            duration: c!.duration || "",
+          }));
+        void notifyClientEmail({
+          type: "assignment",
+          to: selectedClient.email,
+          firstName: selectedClient.firstName,
+          lastName: selectedClient.lastName,
+          courses,
+        });
+      }
+
       setSuccess(
-        `Affectation enregistrée : ${selectedCourseIds.length} formation(s) pour ${clientLabel(selectedClient!)}.`
+        `Affectation enregistrée : ${ids.length} formation(s) pour ${clientLabel(selectedClient!)}.` +
+          (newlyAdded.length > 0
+            ? ` Email envoyé pour ${newlyAdded.length} nouvelle(s).`
+            : "")
       );
+      setModalOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Enregistrement impossible");
     } finally {
@@ -115,22 +220,35 @@ export default function AffectationPage() {
 
   if (loading) {
     return (
-      <p className="text-sm text-brand-950/50">Chargement des clients et formations…</p>
+      <p className="text-sm text-brand-950/50">
+        Chargement des clients et formations…
+      </p>
     );
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-brand-950">Affectation</h1>
-        <p className="mt-1 text-sm text-brand-950/60">
-          Choisissez un client et les formations qu&apos;il peut voir. Même
-          publiées, les autres restent invisibles pour lui. L&apos;admin voit
-          toutes les formations.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-brand-950">
+            {t.admin.assignment}
+          </h1>
+          <p className="mt-1 max-w-xl text-sm text-brand-950/60">
+            {t.admin.assignmentSubtitle}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="primary"
+          className="gap-2"
+          onClick={openCreate}
+        >
+          <Plus className="h-4 w-4" />
+          {t.admin.newAssignment}
+        </Button>
       </div>
 
-      {error && (
+      {error && !modalOpen && (
         <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </p>
@@ -141,144 +259,326 @@ export default function AffectationPage() {
         </p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        {/* Clients */}
-        <section className="rounded-2xl border border-brand-100 bg-white p-4 shadow-soft">
-          <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-700">
-            <UserRound className="h-4 w-4" />
-            Client
-          </h2>
-          {clients.length === 0 ? (
-            <p className="text-xs text-brand-950/50">
-              Aucun client accepté pour le moment.
-            </p>
-          ) : (
-            <ul className="max-h-[60vh] space-y-1 overflow-y-auto">
-              {clients.map((u) => {
-                const active = u.uid === selectedUserId;
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/45" />
+        <input
+          type="search"
+          value={listQuery}
+          onChange={(e) => setListQuery(e.target.value)}
+          placeholder="Rechercher : prénom, nom, email, téléphone…"
+          className="w-full rounded-xl border border-brand-100 bg-white py-2.5 pl-10 pr-3 text-sm outline-none ring-brand-500 focus:ring-2"
+        />
+      </div>
+
+      {filteredClients.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-brand-100 bg-white py-14 text-center text-sm text-brand-950/55 shadow-soft">
+          {clients.length === 0
+            ? "Aucun client accepté. Acceptez d'abord un compte dans Utilisateurs."
+            : "Aucun client ne correspond à votre recherche."}
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-soft">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-brand-100 bg-brand-50/80 text-xs font-bold uppercase tracking-wider text-brand-700">
+              <tr>
+                <th className="px-4 py-3">Client</th>
+                <th className="hidden px-4 py-3 sm:table-cell">Formations</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-brand-50">
+              {filteredClients.map((u) => {
+                const ids = assignMap[u.uid] || [];
+                const titles = ids
+                  .map((id) => courseById.get(id)?.title)
+                  .filter(Boolean) as string[];
                 return (
-                  <li key={u.uid}>
+                  <tr key={u.uid} className="hover:bg-brand-50/40">
+                    <td className="px-4 py-3.5">
+                      <p className="font-semibold text-brand-950">
+                        {clientLabel(u)}
+                      </p>
+                      <p className="truncate text-xs text-brand-950/45">
+                        {u.email}
+                      </p>
+                      <p className="mt-1 text-xs text-brand-950/50 sm:hidden">
+                        {ids.length === 0
+                          ? "Aucune formation"
+                          : `${ids.length} formation(s)`}
+                      </p>
+                    </td>
+                    <td className="hidden px-4 py-3.5 sm:table-cell">
+                      {ids.length === 0 ? (
+                        <span className="text-xs text-brand-950/45">
+                          Aucune formation
+                        </span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {titles.slice(0, 3).map((t) => (
+                            <span
+                              key={t}
+                              className="rounded-lg bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700"
+                            >
+                              {t}
+                            </span>
+                          ))}
+                          {titles.length > 3 && (
+                            <span className="text-xs text-brand-950/45">
+                              +{titles.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="gap-1.5 !px-3 !py-1.5"
+                        onClick={() => openEdit(u)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Modifier
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-brand-950/50 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setModalOpen(false)}
+        >
+          <div
+            className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-brand-100 px-5 py-4">
+              <div>
+                <h2 className="text-lg font-extrabold text-brand-950">
+                  {selectedUserId
+                    ? "Modifier l'affectation"
+                    : "Nouvelle affectation"}
+                </h2>
+                <p className="mt-0.5 text-xs text-brand-950/50">
+                  Recherchez un client, puis cochez les formations.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="rounded-xl p-2 text-brand-950/45 hover:bg-brand-50"
+                aria-label="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+              {error && (
+                <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </p>
+              )}
+
+              {/* Client */}
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-brand-700">
+                  Client *
+                </label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/40" />
+                  <input
+                    type="search"
+                    value={clientQuery}
+                    onChange={(e) => {
+                      setClientQuery(e.target.value);
+                      if (selectedUserId) setSelectedUserId("");
+                    }}
+                    placeholder="Rechercher : prénom, nom, email ou téléphone…"
+                    className="w-full rounded-xl border border-brand-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                {selectedClient ? (
+                  <div className="mt-2 flex items-center justify-between rounded-xl border border-brand-700 bg-brand-50 px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-brand-950">
+                        {clientLabel(selectedClient)}
+                      </p>
+                      <p className="truncate text-xs text-brand-950/50">
+                        {selectedClient.email}
+                        {selectedClient.phone
+                          ? ` · ${selectedClient.phone}`
+                          : ""}
+                      </p>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setSelectedUserId(u.uid)}
-                      className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${
-                        active
-                          ? "bg-brand-700 text-white"
-                          : "text-brand-950 hover:bg-brand-50"
-                      }`}
+                      onClick={() => {
+                        setSelectedUserId("");
+                        setClientQuery("");
+                        setSelectedCourseIds([]);
+                      }}
+                      className="ml-2 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-brand-700 hover:bg-white"
                     >
-                      <span className="block font-semibold">
-                        {clientLabel(u)}
-                      </span>
-                      <span
-                        className={`mt-0.5 block truncate text-xs ${
-                          active ? "text-white/70" : "text-brand-950/45"
-                        }`}
-                      >
-                        {u.email}
-                      </span>
+                      Changer
                     </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
-        {/* Formations */}
-        <section className="rounded-2xl border border-brand-100 bg-white p-4 shadow-soft sm:p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-brand-700">
-              Formations à affecter
-            </h2>
-            {selectedUserId && courses.length > 0 && (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={selectAll}
-                  className="text-xs font-semibold text-brand-700 hover:underline"
-                >
-                  Tout cocher
-                </button>
-                <button
-                  type="button"
-                  onClick={clearAll}
-                  className="text-xs font-semibold text-brand-700 hover:underline"
-                >
-                  Tout décocher
-                </button>
+                  </div>
+                ) : clientQuery.trim() ? (
+                  <ul className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-brand-100">
+                    {modalClientResults.length === 0 ? (
+                      <li className="px-3 py-3 text-xs text-brand-950/45">
+                        Aucun client trouvé pour « {clientQuery.trim()} ».
+                      </li>
+                    ) : (
+                      modalClientResults.map((u) => (
+                        <li key={u.uid}>
+                          <button
+                            type="button"
+                            onClick={() => pickClient(u)}
+                            className="w-full px-3 py-2.5 text-left text-sm hover:bg-brand-50"
+                          >
+                            <span className="block font-semibold text-brand-950">
+                              {clientLabel(u)}
+                            </span>
+                            <span className="block truncate text-xs text-brand-950/45">
+                              {u.email}
+                              {u.phone ? ` · ${u.phone}` : ""}
+                            </span>
+                          </button>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-xs text-brand-950/45">
+                    Commencez à taper pour rechercher un client.
+                  </p>
+                )}
               </div>
-            )}
-          </div>
 
-          {!selectedUserId ? (
-            <p className="py-10 text-center text-sm text-brand-950/50">
-              Sélectionnez un client à gauche.
-            </p>
-          ) : loadingAssign ? (
-            <p className="py-10 text-center text-sm text-brand-950/50">
-              Chargement de l&apos;affectation…
-            </p>
-          ) : courses.length === 0 ? (
-            <p className="py-10 text-center text-sm text-brand-950/50">
-              Aucune formation créée.
-            </p>
-          ) : (
-            <ul className="max-h-[50vh] space-y-2 overflow-y-auto">
-              {courses.map((c) => {
-                const checked = selectedCourseIds.includes(c.id);
-                return (
-                  <li key={c.id}>
-                    <label
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 transition ${
-                        checked
-                          ? "border-brand-700 bg-brand-50"
-                          : "border-brand-100 hover:bg-brand-50/50"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="mt-1 accent-brand-700"
-                        checked={checked}
-                        onChange={() => toggleCourse(c.id)}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-brand-950">
-                          {c.title}
-                        </span>
-                        <span className="mt-0.5 block text-xs text-brand-950/50">
-                          {c.category} · {c.published ? "Publié" : "Brouillon"}
-                        </span>
-                      </span>
-                      {checked && (
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" />
-                      )}
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+              {/* Formations */}
+              <div>
+                <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-brand-700">
+                    Formations
+                  </label>
+                  {selectedUserId && courses.length > 0 && (
+                    <div className="flex gap-3 text-xs font-semibold text-brand-700">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedCourseIds(courses.map((c) => c.id))
+                        }
+                        className="hover:underline"
+                      >
+                        Tout cocher
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCourseIds([])}
+                        className="hover:underline"
+                      >
+                        Tout décocher
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="relative mb-2">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/40" />
+                  <input
+                    type="search"
+                    value={courseQuery}
+                    onChange={(e) => setCourseQuery(e.target.value)}
+                    placeholder="Rechercher une formation…"
+                    disabled={!selectedUserId}
+                    className="w-full rounded-xl border border-brand-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-brand-50 disabled:opacity-60"
+                  />
+                </div>
 
-          {selectedUserId && (
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-brand-100 pt-4">
-              <p className="text-xs text-brand-950/55">
+                {!selectedUserId ? (
+                  <p className="rounded-xl border border-dashed border-brand-100 py-8 text-center text-sm text-brand-950/45">
+                    Sélectionnez d&apos;abord un client.
+                  </p>
+                ) : loadingAssign ? (
+                  <p className="py-8 text-center text-sm text-brand-950/45">
+                    Chargement…
+                  </p>
+                ) : modalCourseResults.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-brand-950/45">
+                    Aucune formation trouvée.
+                  </p>
+                ) : (
+                  <ul className="max-h-56 space-y-1.5 overflow-y-auto">
+                    {modalCourseResults.map((c) => {
+                      const checked = selectedCourseIds.includes(c.id);
+                      return (
+                        <li key={c.id}>
+                          <label
+                            className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition ${
+                              checked
+                                ? "border-brand-700 bg-brand-50"
+                                : "border-brand-100 hover:bg-brand-50/60"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-1 accent-brand-700"
+                              checked={checked}
+                              onChange={() => toggleCourse(c.id)}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold text-brand-950">
+                                {c.title}
+                              </span>
+                              <span className="mt-0.5 block text-xs text-brand-950/45">
+                                {c.category || "Sans catégorie"} ·{" "}
+                                {c.published ? "Publié" : "Brouillon"}
+                              </span>
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-100 px-5 py-4">
+              <p className="text-xs text-brand-950/50">
                 {selectedCourseIds.length} formation(s) sélectionnée(s)
               </p>
-              <Button
-                type="button"
-                variant="primary"
-                className="gap-2"
-                disabled={saving}
-                onClick={onSave}
-              >
-                <Save className="h-4 w-4" />
-                {saving ? "Enregistrement…" : "Enregistrer l'affectation"}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="gap-2"
+                  disabled={saving || !selectedUserId}
+                  onClick={onSave}
+                >
+                  <Save className="h-4 w-4" />
+                  {saving ? "Enregistrement…" : "Enregistrer"}
+                </Button>
+              </div>
             </div>
-          )}
-        </section>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

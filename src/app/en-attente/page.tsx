@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PublicShell } from "@/components/layouts/PublicShell";
@@ -10,7 +10,15 @@ import { useAuth } from "@/components/auth/AuthProvider";
 function EnAttenteContent() {
   const params = useSearchParams();
   const refused = params.get("status") === "refused";
-  const { profile, logout, isAccepted } = useAuth();
+  const emailFromQuery = params.get("email") || "";
+  const { user, profile, logout, isAccepted, isAdmin, loading } = useAuth();
+
+  // Si une session « en attente » existe encore → déconnexion
+  useEffect(() => {
+    if (loading) return;
+    if (!user || isAdmin || isAccepted) return;
+    void logout();
+  }, [loading, user, isAdmin, isAccepted, logout]);
 
   if (isAccepted) {
     return (
@@ -26,40 +34,34 @@ function EnAttenteContent() {
     );
   }
 
+  const shownEmail = emailFromQuery || profile?.email || "";
+  const isRefused = refused || profile?.status === "refused";
+
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
       <h1 className="text-2xl font-extrabold text-brand-950">
-        {refused || profile?.status === "refused"
-          ? "Inscription refusée"
-          : "En attente de validation"}
+        {isRefused ? "Inscription refusée" : "En attente de validation"}
       </h1>
       <p className="mt-3 text-sm leading-relaxed text-brand-950/70">
-        {refused || profile?.status === "refused"
+        {isRefused
           ? "Un administrateur a refusé votre demande. Contactez le centre de formation pour plus d'informations."
-          : "Votre compte a bien été créé. Un administrateur doit accepter votre inscription avant d'accéder à l'espace stagiaire."}
+          : "Votre compte a bien été créé. Un administrateur doit accepter votre inscription avant que vous puissiez vous connecter à votre espace."}
       </p>
-      {profile?.email && (
-        <p className="mt-2 text-xs text-brand-950/50">{profile.email}</p>
+      {shownEmail && (
+        <p className="mt-2 text-xs text-brand-950/50">{shownEmail}</p>
       )}
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button href="/" variant="ghost">
           Accueil
         </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={async () => {
-            await logout();
-            window.location.href = "/connexion";
-          }}
-        >
-          Se déconnecter
+        <Button href="/connexion" variant="primary">
+          Se connecter
         </Button>
       </div>
       <p className="mt-6 text-xs text-brand-950/40">
-        Déjà validé ?{" "}
+        Déjà validé par l&apos;admin ?{" "}
         <Link href="/connexion" className="font-semibold text-brand-700">
-          Reconnectez-vous
+          Connectez-vous
         </Link>
       </p>
     </div>

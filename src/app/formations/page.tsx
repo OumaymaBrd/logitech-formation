@@ -9,14 +9,16 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { listCourses } from "@/lib/courses";
 import { getAssignedCourseIds } from "@/lib/assignments";
 import type { Course } from "@/lib/types";
+import { useI18n } from "@/i18n/LanguageProvider";
 
 export default function FormationsPage() {
   const { user, isAdmin } = useAuth();
+  const { t, locale } = useI18n();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("Toutes");
+  const [category, setCategory] = useState<string>("Toutes");
 
   useEffect(() => {
     let cancelled = false;
@@ -50,9 +52,7 @@ export default function FormationsPage() {
       } catch (e) {
         if (!cancelled) {
           setError(
-            e instanceof Error
-              ? e.message
-              : "Impossible de charger les formations."
+            e instanceof Error ? e.message : t.formations.error
           );
         }
       } finally {
@@ -63,19 +63,30 @@ export default function FormationsPage() {
     return () => {
       cancelled = true;
     };
-  }, [user?.uid, isAdmin]);
+  }, [user?.uid, isAdmin, t.formations.error]);
+
+  const allLabel = t.formations.all;
 
   const categoryOptions = useMemo(() => {
     const set = new Set<string>();
     for (const c of courses) {
       if (c.category?.trim()) set.add(c.category.trim());
     }
-    return ["Toutes", ...Array.from(set).sort((a, b) => a.localeCompare(b, "fr"))];
-  }, [courses]);
+    return [
+      allLabel,
+      ...Array.from(set).sort((a, b) =>
+        a.localeCompare(b, locale === "ar" ? "ar" : "fr")
+      ),
+    ];
+  }, [courses, allLabel, locale]);
 
   const filtered = useMemo(() => {
     return courses.filter((f) => {
-      const matchCat = category === "Toutes" || f.category === category;
+      const matchCat =
+        category === allLabel ||
+        category === "Toutes" ||
+        category === "الكل" ||
+        f.category === category;
       const q = query.trim().toLowerCase();
       const matchQ =
         !q ||
@@ -83,18 +94,25 @@ export default function FormationsPage() {
         f.category.toLowerCase().includes(q);
       return matchCat && matchQ;
     });
-  }, [courses, query, category]);
+  }, [courses, query, category, allLabel]);
+
+  // Reset category label when language changes
+  useEffect(() => {
+    setCategory(allLabel);
+  }, [allLabel]);
 
   return (
     <PublicShell>
       <RequireAuth>
         <section className="bg-brand-950 px-4 py-12 sm:px-6">
           <div className="mx-auto max-w-7xl">
-            <h1 className="text-3xl font-extrabold text-white">Nos Formations</h1>
+            <h1 className="text-3xl font-extrabold text-white">
+              {t.formations.title}
+            </h1>
             <p className="mt-2 max-w-xl text-sm text-white/70">
               {isAdmin
-                ? "Vue admin : toutes les formations."
-                : "Formations qui vous ont été affectées."}
+                ? t.formations.subtitleAdmin
+                : t.formations.subtitleClient}
             </p>
           </div>
         </section>
@@ -102,13 +120,13 @@ export default function FormationsPage() {
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <div className="mb-6 flex flex-col gap-4">
             <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/50" />
+              <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700/50" />
               <input
                 type="search"
-                placeholder="Rechercher une formation…"
+                placeholder={t.formations.searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="w-full rounded-xl border border-brand-100 bg-white py-2.5 pl-10 pr-4 text-sm outline-none ring-brand-500 focus:ring-2"
+                className="w-full rounded-xl border border-brand-100 bg-white py-2.5 ps-10 pe-4 text-sm outline-none ring-brand-500 focus:ring-2"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -131,7 +149,7 @@ export default function FormationsPage() {
 
           {loading ? (
             <p className="py-16 text-center text-sm text-brand-950/50">
-              Chargement des formations…
+              {t.formations.loading}
             </p>
           ) : error ? (
             <p className="rounded-2xl bg-red-50 px-4 py-6 text-center text-sm text-red-700">
@@ -141,9 +159,9 @@ export default function FormationsPage() {
             <p className="rounded-2xl border border-dashed border-brand-100 bg-brand-50/50 py-16 text-center text-sm text-brand-950/55">
               {courses.length === 0
                 ? isAdmin
-                  ? "Aucune formation. Ajoutez-en depuis l'admin."
-                  : "Aucune formation ne vous a été affectée pour le moment."
-                : "Aucune formation ne correspond à votre recherche."}
+                  ? t.formations.emptyAdmin
+                  : t.formations.emptyClient
+                : t.formations.emptySearch}
             </p>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

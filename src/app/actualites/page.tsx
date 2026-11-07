@@ -1,43 +1,23 @@
+"use client";
+
 import Image from "next/image";
 import { CalendarDays, Newspaper } from "lucide-react";
-import Link from "next/link";
 import { PublicShell } from "@/components/layouts/PublicShell";
 import { Button } from "@/components/ui/Button";
+import { useI18n } from "@/i18n/LanguageProvider";
 
-export const metadata = { title: "Actualités" };
-
-const news = [
-  {
-    date: "15 oct 2026",
-    tag: "Session",
-    title: "Nouvelle session chariot élévateur en novembre",
-    excerpt:
-      "Inscriptions ouvertes pour la session du 3 au 7 novembre. Places limitées.",
-    // Entrepôt / chariot élévateur
-    image:
-      "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&q=80",
-  },
-  {
-    date: "2 oct 2026",
-    tag: "Plateforme",
-    title: "Lancement de la plateforme e-learning",
-    excerpt:
-      "Accédez à vos modules, tests et attestations depuis votre espace stagiaire.",
-    image:
-      "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=900&q=80",
-  },
-  {
-    date: "18 sep 2026",
-    tag: "Entreprises",
-    title: "Partenariat entreprises — formations intra",
-    excerpt:
-      "Formez vos équipes sur site avec nos programmes sur mesure.",
-    image:
-      "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=900&q=80",
-  },
+const images = [
+  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&q=80",
+  "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=900&q=80",
+  "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=900&q=80",
 ];
 
 export default function ActualitesPage() {
+  const { t } = useI18n();
+  const news = t.news.items.map((item, i) => ({
+    ...item,
+    image: images[i] || images[0],
+  }));
   const [featured, ...others] = news;
 
   return (
@@ -49,9 +29,11 @@ export default function ActualitesPage() {
               <Newspaper className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-3xl font-extrabold text-white">Actualités</h1>
+              <h1 className="text-3xl font-extrabold text-white">
+                {t.news.title}
+              </h1>
               <p className="mt-2 max-w-2xl text-sm text-white/70">
-                Suivez les nouveautés, sessions et annonces de Logitech Formation.
+                {t.news.subtitle}
               </p>
             </div>
           </div>
@@ -59,7 +41,6 @@ export default function ActualitesPage() {
       </section>
 
       <section className="mx-auto max-w-7xl space-y-5 px-4 py-12 sm:px-6">
-        {/* Article principal — photo + texte côte à côte */}
         <article className="grid overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-soft md:grid-cols-2">
           <div className="relative min-h-[220px] sm:min-h-[280px]">
             <Image
@@ -87,16 +68,9 @@ export default function ActualitesPage() {
             <p className="mt-3 text-sm leading-relaxed text-brand-950/65 sm:text-base">
               {featured.excerpt}
             </p>
-            <Link
-              href="/inscription"
-              className="mt-5 inline-flex text-sm font-semibold text-brand-700 hover:underline"
-            >
-              En savoir plus →
-            </Link>
           </div>
         </article>
 
-        {/* Autres actualités */}
         <div className="grid gap-5 sm:grid-cols-2">
           {others.map((n) => (
             <article
@@ -128,12 +102,6 @@ export default function ActualitesPage() {
                 <p className="mt-2 text-sm leading-relaxed text-brand-950/65">
                   {n.excerpt}
                 </p>
-                <Link
-                  href="/connexion"
-                  className="mt-4 text-sm font-semibold text-brand-700 hover:underline"
-                >
-                  En savoir plus →
-                </Link>
               </div>
             </article>
           ))}
@@ -141,20 +109,15 @@ export default function ActualitesPage() {
 
         <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-brand-100 bg-brand-50/60 px-6 py-6 sm:flex-row sm:items-center">
           <div>
-            <p className="text-sm font-bold text-brand-950">
-              Envie de rejoindre une session ?
-            </p>
-            <p className="mt-1 text-xs text-brand-950/60">
-              Créez un compte stagiaire pour accéder aux formations et à
-              l&apos;e-learning.
-            </p>
+            <p className="text-sm font-bold text-brand-950">{t.news.ctaTitle}</p>
+            <p className="mt-1 text-xs text-brand-950/60">{t.news.ctaText}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button href="/inscription" variant="primary">
-              S&apos;inscrire
+              {t.news.ctaSignup}
             </Button>
             <Button href="/contact" variant="ghost">
-              Nous contacter
+              {t.news.ctaContact}
             </Button>
           </div>
         </div>

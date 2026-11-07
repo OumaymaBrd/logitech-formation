@@ -1,8 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Mode développement : lecture/écriture pour utilisateurs connectés
-    // (à durcir plus tard pour la prod)
+    // Messages contact : envoi public, lecture admin (connecté)
+    match /contactMessages/{id} {
+      allow create: if request.resource.data.keys().hasAll(['fullName', 'email', 'phone', 'message', 'status', 'createdAt'])
+        && request.resource.data.status == 'new'
+        && request.resource.data.fullName is string
+        && request.resource.data.email is string
+        && request.resource.data.phone is string
+        && request.resource.data.message is string;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // Reste : utilisateurs connectés (dev)
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

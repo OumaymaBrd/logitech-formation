@@ -13,9 +13,12 @@ import { getCourseBySlug, saveCourseVideoDuration } from "@/lib/courses";
 import { getAssignedCourseIds } from "@/lib/assignments";
 import { getCourseProgress, saveCourseProgress } from "@/lib/progress";
 import type { Course } from "@/lib/types";
+import { useI18n } from "@/i18n/LanguageProvider";
+import { useTranslated } from "@/components/TranslatedText";
 
 export function CourseDetailView({ slug }: { slug: string }) {
   const { user, isAdmin } = useAuth();
+  const { t } = useI18n();
   const [formation, setFormation] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -114,6 +117,12 @@ export function CourseDetailView({ slug }: { slug: string }) {
     formation?.content ||
     formation?.description ||
     "Aucun contenu textuel pour cette leçon.";
+
+  const translatedTitle = useTranslated(formation?.title || "");
+  const translatedLesson = useTranslated(lessonText);
+  const translatedModuleTitle = useTranslated(
+    activeModule?.title || "Leçon"
+  );
 
   const hasVideo =
     formation?.mediaType === "video" || formation?.mediaType === "both";
@@ -239,20 +248,20 @@ export function CourseDetailView({ slug }: { slug: string }) {
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
             <nav className="mb-6 text-sm text-brand-950/50">
               <Link href="/" className="hover:text-brand-700">
-                Accueil
+                {t.nav.home}
               </Link>
               <span className="mx-2">›</span>
               <Link href="/formations" className="hover:text-brand-700">
-                Formations
+                {t.nav.formations}
               </Link>
               <span className="mx-2">›</span>
-              <span className="text-brand-950">{formation.title}</span>
+              <span className="text-brand-950">{translatedTitle}</span>
             </nav>
 
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
               <div className="min-w-0">
                 <h1 className="text-2xl font-extrabold text-brand-950 sm:text-3xl">
-                  {formation.title}
+                  {translatedTitle}
                 </h1>
                 {displayDuration && (
                   <p className="mt-2 text-sm font-medium text-brand-700">
@@ -275,10 +284,10 @@ export function CourseDetailView({ slug }: { slug: string }) {
 
                 <div className="mt-6 rounded-[14px] bg-white p-6 shadow-card">
                   <h2 className="text-lg font-bold text-brand-950">
-                    {activeModule?.title || "Leçon"}
+                    {translatedModuleTitle}
                   </h2>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-brand-950/70">
-                    {lessonText}
+                    {translatedLesson}
                   </p>
                   {activeModule && (
                     <div className="mt-5">
