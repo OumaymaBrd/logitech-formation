@@ -36,7 +36,7 @@ export function LocaleSwitcher({ className = "", variant = "default" }: Props) {
           key={code}
           type="button"
           onClick={() => setLocale(code)}
-          className={`px-2.5 py-1.5 text-xs font-semibold transition ${
+          className={`px-2 py-1 text-[11px] font-semibold transition sm:px-2.5 sm:py-1.5 sm:text-xs ${
             locale === code ? active : inactive
           }`}
           aria-pressed={locale === code}

@@ -9,7 +9,6 @@ import { Logo } from "./Logo";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/i18n/LanguageProvider";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
-import type { Locale } from "@/i18n/types";
 
 function displayName(opts: {
   firstName?: string;
@@ -27,7 +26,7 @@ export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { user, profile, isAdmin, isAccepted, loading, logout } = useAuth();
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
 
   const links = [
     { href: "/", label: t.nav.home, auth: false },
@@ -103,9 +102,7 @@ export function Header() {
         </nav>
 
         <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
-          <div className="hidden sm:inline-flex">
-            <LocaleSwitcher />
-          </div>
+          <LocaleSwitcher className="shrink-0" />
           {!loading && sessionActive ? (
             <div className="hidden items-center gap-1.5 md:flex">
               <Link
@@ -173,22 +170,6 @@ export function Header() {
 
       {open && (
         <div className="max-h-[calc(100dvh-4.25rem)] overflow-y-auto overscroll-contain border-t border-brand-100 bg-white px-4 py-4 lg:hidden">
-          <div className="mb-3 flex gap-2 sm:hidden">
-            {(["fr", "ar"] as Locale[]).map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => setLocale(code)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
-                  locale === code
-                    ? "bg-brand-700 text-white"
-                    : "bg-brand-100 text-brand-700"
-                }`}
-              >
-                {code === "fr" ? t.lang.fr : t.lang.ar}
-              </button>
-            ))}
-          </div>
           <nav className="flex flex-col gap-1">
             {links.map((link) => (
               <Link
