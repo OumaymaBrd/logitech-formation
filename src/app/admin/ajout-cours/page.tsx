@@ -214,7 +214,7 @@ export default function AjoutCoursPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl pb-8">
+    <div className="mx-auto w-full max-w-4xl pb-4">
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold tracking-tight text-brand-950">
           {t.admin.addCourse}

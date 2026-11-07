@@ -47,25 +47,24 @@ export default function AdminLoginPage() {
     setPending(true);
     try {
       if (!isAdminEmail(email.trim())) {
-        throw new Error("Cet email n'est pas autorisé comme administrateur.");
+        throw new Error(t.admin.loginNotAllowed);
       }
-      // Session Firebase IndexedDB + cookie email si « Se souvenir »
       saveRememberedAdminEmail(email.trim(), remember);
       const profile = await login(email.trim(), password);
       if (profile.role !== "admin" && !isAdminEmail(profile.email)) {
         await logout();
-        throw new Error("Compte non administrateur.");
+        throw new Error(t.admin.loginNotAdmin);
       }
       router.replace("/admin");
     } catch (err) {
-      setError(friendlyAuthError(err, "Connexion impossible."));
+      setError(friendlyAuthError(err, t.admin.loginFailed));
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-950 px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-brand-950 px-4">
       <div className="w-full max-w-md rounded-[14px] bg-white p-8 shadow-card">
         <div className="mb-6 flex flex-col items-center gap-3">
           <Logo variant="header" href={null} />
@@ -80,14 +79,14 @@ export default function AdminLoginPage() {
 
         {!configured && (
           <div className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            Configurez Firebase dans <strong>.env.local</strong>.
+            {t.admin.loginFirebaseHint}
           </div>
         )}
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-semibold text-brand-950">
-              Email admin
+              {t.admin.loginEmail}
             </label>
             <input
               type="email"
@@ -101,7 +100,7 @@ export default function AdminLoginPage() {
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-brand-950">
-              Mot de passe
+              {t.admin.loginPassword}
             </label>
             <input
               type="password"
@@ -120,7 +119,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setRemember(e.target.checked)}
               className="accent-brand-700"
             />
-            Se souvenir de moi (cookie — 30 jours)
+            {t.admin.loginRemember}
           </label>
 
           {error && (
@@ -134,13 +133,12 @@ export default function AdminLoginPage() {
             className="w-full"
             disabled={pending || !configured}
           >
-            {pending ? "Connexion…" : "Se connecter"}
+            {pending ? t.admin.loginSubmitting : t.admin.loginSubmit}
           </Button>
 
           <p className="text-center text-xs text-brand-950/45">
-            Session sécurisée (IndexedDB + cookie).{" "}
             <Link href="/connexion" className="font-semibold text-brand-700">
-              Connexion générale
+              {t.admin.loginGeneral}
             </Link>
           </p>
         </form>

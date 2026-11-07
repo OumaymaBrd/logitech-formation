@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -24,6 +25,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const isLogin = pathname === "/admin/login";
 
+  // Empêche le scroll du body (bande blanche sous le shell fixed)
+  useEffect(() => {
+    if (isLogin) return;
+    const prevHtml = document.documentElement.style.overflow;
+    const prevBody = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = prevHtml;
+      document.body.style.overflow = prevBody;
+    };
+  }, [isLogin]);
+
   const mobileNav = [
     { href: "/admin", label: t.admin.dashboardShort, icon: LayoutDashboard },
     {
@@ -47,12 +61,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AdminGuard>
-      <div className="fixed inset-0 z-0 flex overflow-hidden bg-brand-50">
+      <div className="fixed inset-0 z-0 flex h-dvh w-full overflow-hidden bg-brand-50">
         <div className="hidden h-full w-64 shrink-0 md:block">
           <DashboardSidebar variant="admin" />
         </div>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-16 md:pb-0">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-16 md:pb-0">
           {/* Barre langue — mobile */}
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-brand-100 bg-white px-4 py-3 md:hidden">
             <p className="text-sm font-bold text-brand-950">
@@ -89,8 +103,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <LocaleSwitcher variant="light" />
           </div>
 
-          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
-            {children}
+          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-brand-50 p-4 sm:p-6 lg:p-8">
+            <div className="min-h-full w-full">{children}</div>
           </main>
         </div>
 

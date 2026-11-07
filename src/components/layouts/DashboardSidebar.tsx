@@ -50,7 +50,7 @@ export function DashboardSidebar({ variant }: Props) {
   }
 
   return (
-    <aside className="flex h-full w-full flex-col bg-brand-950 text-white">
+    <aside className="flex h-full min-h-0 w-full flex-col bg-brand-950 text-white">
       <div className="shrink-0 border-b border-white/10 px-4 py-4">
         <Logo variant="sidebar" href="/" />
         <p className="mt-2 px-1 text-[10px] uppercase tracking-wider text-brand-500">
