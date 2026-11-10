@@ -12,9 +12,7 @@ import { PublicShell } from "@/components/layouts/PublicShell";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/i18n/LanguageProvider";
-
-const MAPS_URL =
-  "https://www.google.com/maps/place/Opal+Dental+Center+-+Dr.EL+IDRISSI+NIHAD/@35.754921,-5.8280544,17z/data=!4m6!3m5!1s0xd0b870024fc6247:0x755124c5632764d3!8m2!3d35.7549286!4d-5.8280503!16s%2Fg%2F11m6vl3bn_?hl=fr";
+import { SITE } from "@/lib/site";
 
 export default function AProposPage() {
   const { t } = useI18n();
@@ -51,13 +49,13 @@ export default function AProposPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-brand-950/70 via-brand-950/20 to-transparent" />
             <div className="absolute bottom-0 inset-inline-start-0 inset-inline-end-0 p-5 sm:p-6">
               <a
-                href={MAPS_URL}
+                href={SITE.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-brand-700 shadow-sm transition hover:bg-white hover:text-brand-800"
               >
                 <MapPin className="h-3.5 w-3.5" />
-                {t.about.location}
+                {SITE.addressLabel}
               </a>
             </div>
           </div>

@@ -4,11 +4,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import { PublicShell } from "@/components/layouts/PublicShell";
 import { ContactForm } from "@/components/ContactForm";
 import { useI18n } from "@/i18n/LanguageProvider";
-
-const MAPS_URL =
-  "https://www.google.com/maps/place/Opal+Dental+Center+-+Dr.EL+IDRISSI+NIHAD/@35.754921,-5.8280544,17z/data=!4m6!3m5!1s0xd0b870024fc6247:0x755124c5632764d3!8m2!3d35.7549286!4d-5.8280503!16s%2Fg%2F11m6vl3bn_?hl=fr";
-
-const INSTAGRAM_URL = "https://www.instagram.com/logitech_formation/";
+import { SITE } from "@/lib/site";
 
 export default function ContactPage() {
   const { t } = useI18n();
@@ -33,9 +29,12 @@ export default function ContactPage() {
               <p className="text-xs font-semibold text-brand-700">
                 {t.contact.phone}
               </p>
-              <p className="text-sm font-medium text-brand-950">
-                +212 5XX-XXXXXX
-              </p>
+              <a
+                href={`tel:${SITE.phoneE164}`}
+                className="text-sm font-medium text-brand-950 hover:text-brand-700 hover:underline"
+              >
+                {SITE.phoneDisplay}
+              </a>
             </div>
           </div>
 
@@ -47,14 +46,17 @@ export default function ContactPage() {
               <p className="text-xs font-semibold text-brand-700">
                 {t.contact.email}
               </p>
-              <p className="text-sm font-medium text-brand-950">
-                contact@logitech-formation.ma
-              </p>
+              <a
+                href={`mailto:${SITE.email}`}
+                className="break-all text-sm font-medium text-brand-950 hover:text-brand-700 hover:underline"
+              >
+                {SITE.email}
+              </a>
             </div>
           </div>
 
           <a
-            href={MAPS_URL}
+            href={SITE.mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 rounded-[14px] bg-white p-5 shadow-card transition hover:bg-brand-50 hover:shadow-lg"
@@ -76,7 +78,7 @@ export default function ContactPage() {
           </a>
 
           <a
-            href={INSTAGRAM_URL}
+            href={SITE.social.instagram}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-start gap-3 rounded-[14px] bg-white p-5 shadow-card transition hover:shadow-lg"
